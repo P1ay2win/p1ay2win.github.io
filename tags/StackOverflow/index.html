@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>标签: 算法分析 - P1ay2win&#39;s blog</title>
+<title>标签: StackOverflow - P1ay2win&#39;s blog</title>
 
 
 
@@ -120,7 +120,7 @@
         <nav class="breadcrumb" aria-label="breadcrumbs">
         <ul>
             <li><a href="/tags">标签</a></li>
-            <li class="is-active"><a href="#" aria-current="page">算法分析</a></li>
+            <li class="is-active"><a href="#" aria-current="page">StackOverflow</a></li>
         </ul>
         </nav>
     </div>
@@ -133,13 +133,13 @@
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-05-23T15:53:53.000Z">2019-05-23</time>
+                <time class="level-item has-text-grey" datetime="2022-03-06T09:42:27.000Z">2022-03-06</time>
                 
                 
                 <span class="level-item has-text-grey">
                     
                     
-                    3 分钟 读完 (大约 383 个字)
+                    3 分钟 读完 (大约 390 个字)
                 </span>
                 
                 
@@ -149,12 +149,16 @@
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                <a class="has-link-black-ter" href="/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/">[逆向学习笔记]桂林电子科技大学“深信服杯”</a>
+                <a class="has-link-black-ter" href="/2022/03/06/PWN-cmcc_simplerop/">[PWN]cmcc_simplerop</a>
             
         </h1>
         <div class="content">
-            <h2 id="0x0number-game"><a href="#0x0number-game" class="headerlink" title="0x0number_game"></a>0x0number_game</h2><p>跟flag直接相关的就是这个函数。</p>
-<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">__<span class="hljs-function">int64 <span class="hljs-title">sub_400917</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> v1; <span class="hljs-comment">// [rsp+0h] [rbp-10h]</span></span><br><span class="line">  <span class="hljs-keyword">signed</span> <span class="hljs-keyword">int</span> i; <span class="hljs-comment">// [rsp+4h] [rbp-Ch]</span></span><br><span class="line">  <span class="hljs-keyword">signed</span> <span class="hljs-keyword">int</span> j; <span class="hljs-comment">// [rsp+8h] [rbp-8h]</span></span><br><span class="line">  <span class="hljs-keyword">int</span> k; <span class="hljs-comment">// [rsp+Ch] [rbp-4h]</span></span><br><span class="line"></span><br><span class="line">  v1 = <span class="hljs-number">1</span>;</span><br><span class="line">  <span class="hljs-keyword">for</span> ( i = <span class="hljs-number">0</span>; i &lt;= <span class="hljs-number">4</span>; ++i )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="hljs-keyword">for</span> ( j = <span class="hljs-number">0</span>; j &lt;= <span class="hljs-number">4</span>; ++j )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="hljs-keyword">for</span> ( k = j + <span class="hljs-number">1</span>; k &lt;= <span class="hljs-number">4</span>; ++k )</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> ( *(&amp;unk_601060 + <span class="hljs-number">5</span> * i + j) == *(&amp;unk_601060 + <span class="hljs-number">5</span> * i + k) )</span><br><span class="line">          v1 = <span class="hljs-number">0</span>;</span><br><span class="line">        <span class="hljs-keyword">if</span> ( *(&amp;unk_601060 + <span class="hljs-number">5</span> * j + i) == *(&amp;unk_601060 + <span class="hljs-number">5</span> * k + i) )</span><br><span class="line">          v1 = <span class="hljs-number">0</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-keyword">return</span> v1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+            <h2 id="cmcc-simplerop-Writeup"><a href="#cmcc-simplerop-Writeup" class="headerlink" title="cmcc_simplerop Writeup"></a>cmcc_simplerop Writeup</h2><blockquote>
+<p><a href="https://buuoj.cn/challenges#cmcc_simplerop" target="_blank" rel="noopener">https://buuoj.cn/challenges#cmcc_simplerop</a></p>
+</blockquote>
+<p>IDA打开附件发现主程序就是简单的栈溢出。</p>
+<p><img src="/2022/03/06/PWN-cmcc_simplerop/批注 2020-03-06 171020.png" alt></p>
+<p>并且是静态链接的程序，查找system函数不存在，但发现了mprotect函数。</p>
         </div>
         
         
@@ -162,7 +166,7 @@
         <div class="level is-mobile">
             <div class="level-start">
                 <div class="level-item">
-                <a class="button is-size-7 is-light" href="/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/#more">阅读更多</a>
+                <a class="button is-size-7 is-light" href="/2022/03/06/PWN-cmcc_simplerop/#more">阅读更多</a>
                 </div>
             </div>
         </div>
