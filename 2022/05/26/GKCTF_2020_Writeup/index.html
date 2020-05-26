@@ -122,6 +122,12 @@
                 <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
 <div class="card">
     
+    <div class="card-image">
+        <span  class="image is-7by1">
+            <img class="thumbnail" src="/images/WechatIMG1350.jpeg" alt="GKCTF_2020_Writeup">
+        </span>
+    </div>
+    
     <div class="card-content article ">
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
@@ -132,7 +138,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    9 分钟 读完 (大约 1360 个字)
+                    9 分钟 读完 (大约 1361 个字)
                 </span>
                 
                 
@@ -150,6 +156,7 @@
         <div class="content">
             <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>题目总体好像不太难，题目质量也可以。web在比赛时候做出3道题，马马虎虎，pwn题肝了很久也没做出来，赛后花了两天才研究透，以至于现在才发writeup，还是菜，不过也通过这题学到了很多。</p>
 <p>比赛那天本来一早有网课，边上课边做题，但是爷爷在我还在上课时候硬拉我去喝早茶-_-!…</p>
+<a id="more"></a>
 <h1 id="WEB"><a href="#WEB" class="headerlink" title="WEB"></a>WEB</h1><h2 id="CheckIN"><a href="#CheckIN" class="headerlink" title="CheckIN"></a>CheckIN</h2><p>打开直接给了源码，小小的一个webshell，估摸着可能能绕waf。</p>
 <p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 195802.png" alt="批注 2020-05-26 195802"></p>
 <p>习惯性的看了下<code>phpinfo</code>，发现ban了可以执行命令的函数。这时候当然是上神器蚁剑，但是各种模式都没法bypass<code>disable_functions</code>。</p>
