@@ -138,7 +138,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    9 分钟 读完 (大约 1361 个字)
+                    9 分钟 读完 (大约 1333 个字)
                 </span>
                 
                 
@@ -158,36 +158,36 @@
 <p>比赛那天本来一早有网课，边上课边做题，但是爷爷在我还在上课时候硬拉我去喝早茶-_-!…</p>
 <a id="more"></a>
 <h1 id="WEB"><a href="#WEB" class="headerlink" title="WEB"></a>WEB</h1><h2 id="CheckIN"><a href="#CheckIN" class="headerlink" title="CheckIN"></a>CheckIN</h2><p>打开直接给了源码，小小的一个webshell，估摸着可能能绕waf。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 195802.png" alt="批注 2020-05-26 195802"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 195802.png" alt></p>
 <p>习惯性的看了下<code>phpinfo</code>，发现ban了可以执行命令的函数。这时候当然是上神器蚁剑，但是各种模式都没法bypass<code>disable_functions</code>。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 200440.png" alt="批注 2020-05-26 200440"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 200440.png" alt></p>
 <p>其中PHP7的那个模式可能是web目录不可写的原因，所以不成功。直接上传<a href="https://github.com/mm0r1/exploits/tree/master/php7-gc-bypass" target="_blank" rel="noopener"><strong>exp</strong></a>到<code>/tmp</code>目录，<code>include</code>一下它就行了。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 201959.png" alt="批注 2020-05-26 201959"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 201959.png" alt></p>
 <h2 id="cve版签到"><a href="#cve版签到" class="headerlink" title="cve版签到"></a>cve版签到</h2><p>题目给了提示是<code>cve-2020-7066</code>，在<a href="https://bugs.php.net/bug.php?id=79329" target="_blank" rel="noopener"><strong>官网</strong></a>找到了一个example，估计题目也是差不多的代码。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 202733.png" alt="批注 2020-05-26 202733"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 202733.png" alt></p>
 <p>依据hint，照着官网的example截断。又出来一个hint要求host要以123结尾，这时我对localhost、127.0.0.1各种<code>@123</code>、<code>:123</code>、<code>/?123</code>……最后发现用127.0.0.123就行……</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 203747.png" alt="批注 2020-05-26 203747"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 203747.png" alt></p>
 <h2 id="老八小超市儿"><a href="#老八小超市儿" class="headerlink" title="老八小超市儿"></a>老八小超市儿</h2><p>开局一个开源商城系统，估摸着又要代码审计了。网站最下方的官网提供了github的源码下载链接，又因为最近是特殊时期，源码下载得特别慢，遂去gtihub看下commit，看能不能找到些有用的东西。</p>
 <p>所以给我发现了1.8.0版本之后的commit有个<strong>tp漏洞同步修复 </strong>。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 205510.png" alt="批注 2020-05-26 205510"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 205510.png" alt></p>
 <p>搜了一下在<a href="https://paper.seebug.org/770/#21-0day" target="_blank" rel="noopener"><strong>seebug</strong></a>的一篇文章里发现是thinkphp5.1.X的REC漏洞，但是用exp怎么打也没成功执行命令。于是等源码装好了，开debug模式看看是怎么回事。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 205639.png" alt="批注 2020-05-26 205639"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 205639.png" alt></p>
 <p>装好发现默认密码是这个系统的名字，大胆猜测题目的密码也没有改（手动滑稽）</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 211849.png" alt="批注 2020-05-26 211849"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 211849.png" alt></p>
 <p>就这样轻松的进入了后台，应用中心这个功能很引人注目，似乎来到了挖洞时候的老套路。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 213153.png" alt="批注 2020-05-26 213153"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 213153.png" alt></p>
 <p>不出所料，每个应用包的controller目录里都有几个php文件，于是乎在后台管理的php文件里插入个一句话，再重新打包上传安装。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 222004.png" alt="批注 2020-05-26 222004"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 222004.png" alt></p>
 <figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://06d4e07c-9491-4c5d-86a6-8c98c12b59b1.node3.buuoj.cn/admin.php?s=/plugins/index/pluginsname/goodssales/pluginscontrol/admin/pluginsaction/index.html</span><br></pre></td></tr></table></figure>
 <p>在管理页面那就能getshell，蚁剑连接的时候要带上cookie。在根目录发现了假flag，说真的flag在/root目录里，但现在的用户进不去/root目录，但是根目录看见个shell脚本比较明显，内容为每60秒执行一个python脚本。</p>
 <p>用蚁剑的模拟终端看见这个脚本是以root用户运行的。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 223527.png" alt="批注 2020-05-26 223527"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 223527.png" alt></p>
 <p>好在那个python脚本可写，顺理成章读flag。</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 223755.png" alt="批注 2020-05-26 223755"></p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 223923.png" alt="批注 2020-05-26 223923"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 223755.png" alt></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 223923.png" alt></p>
 <h1 id="REVERSE"><a href="#REVERSE" class="headerlink" title="REVERSE"></a>REVERSE</h1><p>这题其实很简单，但我在比赛时候粗心大意没做出来-_-!</p>
 <p>IDA直接搜索字符串，发现串奇怪的字符串，看起来不像是base64。当时我去在线的base58解码的时候错把编码当解码，又没仔细看-_-!</p>
-<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 225247.png" alt="批注 2020-05-26 225247"></p>
+<p><img src="/2022/05/26/GKCTF_2020_Writeup/批注 2020-05-26 225247.png" alt></p>
 <h1 id="PWN"><a href="#PWN" class="headerlink" title="PWN"></a>PWN</h1><p><strong>pwn题就看了一题，题目是真心觉得出得不错</strong></p>
 <h2 id="Domo"><a href="#Domo" class="headerlink" title="Domo"></a>Domo</h2><p>在比赛时没做出来，赛后复现了下。</p>
 <p>先贴一下exp，思路等会再水一文细说。</p>
@@ -227,6 +227,13 @@
 
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2022/05/27/GKCTF 2020 Domo分析/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">[PWN]GKCTF 2020 Domo分析</span>
+            </a>
+        </div>
         
         
         <div class="level-end">
@@ -309,7 +316,7 @@
                         文章
                     </p>
                     <p class="title has-text-weight-normal">
-                        6
+                        7
                     </p>
                 </div>
             </div>
@@ -329,7 +336,7 @@
                         标签
                     </p>
                     <p class="title has-text-weight-normal">
-                        6
+                        7
                     </p>
                 </div>
             </div>
