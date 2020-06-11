@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>标签: ROP - P1ay2win&#39;s blog</title>
+<title>标签: 提权&#34; - P1ay2win&#39;s blog</title>
 
 
 
@@ -120,7 +120,7 @@
         <nav class="breadcrumb" aria-label="breadcrumbs">
         <ul>
             <li><a href="/tags">标签</a></li>
-            <li class="is-active"><a href="#" aria-current="page">ROP</a></li>
+            <li class="is-active"><a href="#" aria-current="page">提权&#34;</a></li>
         </ul>
         </nav>
     </div>
@@ -133,13 +133,13 @@
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-05-25T00:48:27.000Z">2019-05-25</time>
+                <time class="level-item has-text-grey" datetime="2022-06-11T11:38:27.000Z">2022-06-11</time>
                 
                 
                 <span class="level-item has-text-grey">
                     
                     
-                    6 分钟 读完 (大约 851 个字)
+                    3 分钟 读完 (大约 405 个字)
                 </span>
                 
                 
@@ -149,13 +149,12 @@
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                <a class="has-link-black-ter" href="/2019/05/25/PWN-栈溢出-ROP学习笔记/">[PWN]栈溢出-ROP学习笔记</a>
+                <a class="has-link-black-ter" href="/2022/06/11/Geisha walkthrough/">Geisha walkthrought</a>
             
         </h1>
         <div class="content">
-            <h2 id="ROP简介"><a href="#ROP简介" class="headerlink" title="ROP简介"></a>ROP简介</h2><blockquote>
-<p><strong><a href="https://zh.wikipedia.org/wiki/%E8%BF%94%E5%9B%9E%E5%AF%BC%E5%90%91%E7%BC%96%E7%A8%8B" target="_blank" rel="noopener">面向返回编程</a></strong>（英语：Return-Oriented Programming，缩写：ROP）是计算机安全漏洞利用技术，该技术允许攻击者在安全防御（主要为<strong>NX</strong>， 堆栈不可执行保护）的情况下执行代码，如不可执行的内存和代码签名。攻击者控制堆栈调用以劫持程序控制流并执行针对性的机器语言指令序列（称为<strong>Gadgets</strong>）。 每一段gadget通常结束于<strong>return</strong>指令，并位于共享库代码中的子程序。</p>
-</blockquote>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>准备接受社会毒打，先找几个靶机打打，提高内网、后渗透水平，免得不会深入就说你<strong>noob</strong>，疯狂踩。</p>
+<p>起手先去vulnhub找了个入门到中间难度的靶机<a href="https://www.vulnhub.com/entry/geisha-1,481/" target="_blank" rel="noopener">Geisha</a>(叫<strong>给啥</strong>？？)，目标：Get the root shell and then obtain flag under /root)。</p>
         </div>
         
         
@@ -163,7 +162,7 @@
         <div class="level is-mobile">
             <div class="level-start">
                 <div class="level-item">
-                <a class="button is-size-7 is-light" href="/2019/05/25/PWN-栈溢出-ROP学习笔记/#more">阅读更多</a>
+                <a class="button is-size-7 is-light" href="/2022/06/11/Geisha walkthrough/#more">阅读更多</a>
                 </div>
             </div>
         </div>

@@ -5,7 +5,8 @@
     <url>%2F2022%2F06%2F11%2FGeisha%20walkthrough%2F</url>
     <content type="text"><![CDATA[前言准备接受社会毒打，先找几个靶机打打，提高内网、后渗透水平，免得不会深入就说你noob，疯狂踩。 起手先去vulnhub找了个入门到中间难度的靶机Geisha(叫给啥？？)，目标：Get the root shell and then obtain flag under /root)。 利用把所有端口都扫了一遍，发现开启了ftp、ssh和很多http服务的端口。 每个http服务主页都是一张图片，没什么功能，但其中在7125端口扫到了passwd和shadow，passwd能下载下来。在shadow里看见有两个账号可登录分别是root和geisha，于是用hydra跑下弱口令。 用个小字典一下子就跑出来了，事情发展到目前为止似乎还挺顺利。 但是uname -a看下靶机的发行版本挺新的，偷瞄了下别人的walkthough，发现是利用SUID可执行文件运行时可暂时获得文件拥有者的权限的这个特点来提权的（新技能get）。 使用命令find / -perm -u=s -type f 2&gt;/dev/null搜索所有SUID可执行文件，发现个base32可以用来任意文件读取。 用base32 /root/flag.txt | base32 -d直接读flag或者base32 /root/.ssh/id_rsa | base32 -d读ssh私钥在本地导入即可。 参考Linux Privilege Escalation using SUID Binaries]]></content>
       <tags>
-        <tag>CTF</tag>
+        <tag>靶机</tag>
+        <tag>提权&quot;</tag>
       </tags>
   </entry>
   <entry>
