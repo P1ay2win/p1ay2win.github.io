@@ -2,7 +2,7 @@
 <search>
   <entry>
     <title><![CDATA[Sumo walkthrought]]></title>
-    <url>%2F2022%2F06%2F12%2FSumo%20walkthrough%2F</url>
+    <url>%2F2022%2F06%2F12%2FSumo-walkthrough%2F</url>
     <content type="text"><![CDATA[前言这也是一个很简单的靶机，用到的知识点是CVE-2014-6278的bash命令注入和dirtycow提权。 https://www.vulnhub.com/entry/sumo-1,480/ 利用过程拿到手肯定是要信息收集一波，nmap扫到只开放了22端口和80端口。 80端口进去是默认页面，目录扫出了cgi-bin和server-status目录，状态码都是403。 再用nikto扫下，扫出来了CVE-2014-6278和CVE-2014-6271，是bash命令注入的漏洞，msf里已有exp。 进msf选中利用模块，设置好参数，攻击后正常返回一个meterpreter session。 启动一个shell之后，运行whoami命令和uname -a命令。当前用户是www-data，并且发现内核版本较低，可用dirtycow提权。 使用github上的exp https://github.com/FireFart/dirtycow 上传到靶机，并用以下命令编译运行 12gcc dirty.c -o dirty lpthread./dirty &lt;new_password&gt; 命令执行后要等一段时间，成功后会创建名为firefart的root用户，密码为运行命令时输入的密码。 ssh登录上去，在/root目录即可获得flag。]]></content>
       <tags>
         <tag>靶机</tag>
@@ -11,7 +11,7 @@
   </entry>
   <entry>
     <title><![CDATA[Geisha walkthrought]]></title>
-    <url>%2F2022%2F06%2F11%2FGeisha%20walkthrough%2F</url>
+    <url>%2F2022%2F06%2F11%2FGeisha-walkthrough%2F</url>
     <content type="text"><![CDATA[前言准备接受社会毒打，先找几个靶机打打，提高内网、后渗透水平，免得不会深入就说你noob，疯狂踩。 起手先去vulnhub找了个入门到中间难度的靶机Geisha(叫给啥？？)，目标：Get the root shell and then obtain flag under /root)。 利用把所有端口都扫了一遍，发现开启了ftp、ssh和很多http服务的端口。 每个http服务主页都是一张图片，没什么功能，但其中在7125端口扫到了passwd和shadow，passwd能下载下来。在shadow里看见有两个账号可登录分别是root和geisha，于是用hydra跑下弱口令。 用个小字典一下子就跑出来了，事情发展到目前为止似乎还挺顺利。 但是uname -a看下靶机的发行版本挺新的，偷瞄了下别人的walkthough，发现是利用SUID可执行文件运行时可暂时获得文件拥有者的权限的这个特点来提权的（新技能get）。 使用命令find / -perm -u=s -type f 2&gt;/dev/null搜索所有SUID可执行文件，发现个base32可以用来任意文件读取。 用base32 /root/flag.txt | base32 -d直接读flag或者base32 /root/.ssh/id_rsa | base32 -d读ssh私钥在本地导入即可。 参考Linux Privilege Escalation using SUID Binaries]]></content>
       <tags>
         <tag>靶机</tag>

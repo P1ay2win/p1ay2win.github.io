@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>Sumo walkthrought - P1ay2win&#39;s blog</title>
+<title>Geisha walkthrought - P1ay2win&#39;s blog</title>
 
 
 
@@ -67,7 +67,7 @@
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/header.png" alt="Sumo walkthrought" height="28">
+                <img src="/images/header.png" alt="Geisha walkthrought" height="28">
                 P1ay2win&#39;s blog
             
             </a>
@@ -126,13 +126,13 @@
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2022-06-12T01:41:27.000Z">2022-06-12</time>
+                <time class="level-item has-text-grey" datetime="2022-06-11T11:38:27.000Z">2022-06-11</time>
                 
                 
                 <span class="level-item has-text-grey">
                     
                     
-                    2 分钟 读完 (大约 327 个字)
+                    3 分钟 读完 (大约 405 个字)
                 </span>
                 
                 
@@ -144,43 +144,33 @@
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                Sumo walkthrought
+                Geisha walkthrought
             
         </h1>
         <div class="content">
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这也是一个很简单的靶机，用到的知识点是<strong>CVE-2014-6278</strong>的bash命令注入和<strong>dirtycow</strong>提权。</p>
-<blockquote>
-<p><a href="https://www.vulnhub.com/entry/sumo-1,480/" target="_blank" rel="noopener">https://www.vulnhub.com/entry/sumo-1,480/</a></p>
-</blockquote>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>准备接受社会毒打，先找几个靶机打打，提高内网、后渗透水平，免得不会深入就说你<strong>noob</strong>，疯狂踩。</p>
+<p>起手先去vulnhub找了个入门到中间难度的靶机<a href="https://www.vulnhub.com/entry/geisha-1,481/" target="_blank" rel="noopener">Geisha</a>(叫<strong>给啥</strong>？？)，目标：Get the root shell and then obtain flag under /root)。</p>
 <a id="more"></a>
-<h2 id="利用过程"><a href="#利用过程" class="headerlink" title="利用过程"></a>利用过程</h2><p>拿到手肯定是要信息收集一波，nmap扫到只开放了22端口和80端口。</p>
-<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 085032.png" alt="批注 2020-06-12 085032"></p>
-<p>80端口进去是默认页面，目录扫出了<code>cgi-bin</code>和<code>server-status</code>目录，状态码都是403。</p>
-<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 085641.png" alt="批注 2020-06-12 085641"></p>
-<p>再用nikto扫下，扫出来了CVE-2014-6278和CVE-2014-6271，是bash命令注入的漏洞，msf里已有exp。</p>
-<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 085914.png" alt="批注 2020-06-12 085914"></p>
-<p>进msf选中利用模块，设置好参数，攻击后正常返回一个meterpreter session。</p>
-<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 091414.png" alt="批注 2020-06-12 091414"></p>
-<p>启动一个shell之后，运行<code>whoami</code>命令和<code>uname -a</code>命令。当前用户是www-data，并且发现内核版本较低，可用dirtycow提权。</p>
-<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 091829.png" alt="批注 2020-06-12 091829"></p>
-<p>使用github上的exp</p>
-<blockquote>
-<p><a href="https://github.com/FireFart/dirtycow" target="_blank" rel="noopener">https://github.com/FireFart/dirtycow</a></p>
-</blockquote>
-<p>上传到靶机，并用以下命令编译运行</p>
-<figure class="highlight shell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gcc dirty.c -o dirty lpthread</span><br><span class="line">./dirty &lt;new_password&gt;</span><br></pre></td></tr></table></figure>
-<p>命令执行后要等一段时间，成功后会创建名为firefart的root用户，密码为运行命令时输入的密码。</p>
-<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 093344.png" alt="批注 2020-06-12 093344"></p>
-<p>ssh登录上去，在/root目录即可获得flag。</p>
-<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 093542.png" alt="批注 2020-06-12 093542"></p>
+<h2 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h2><p>把所有端口都扫了一遍，发现开启了ftp、ssh和很多http服务的端口。</p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 174747.png" alt="批注 2020-06-11 174747"></p>
+<p>每个http服务主页都是一张图片，没什么功能，但其中在7125端口扫到了passwd和shadow，passwd能下载下来。在shadow里看见有两个账号可登录分别是root和geisha，于是用hydra跑下弱口令。</p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 180217.png" alt="批注 2020-06-11 180217"></p>
+<p>用个小字典一下子就跑出来了，事情发展到目前为止似乎还挺顺利。</p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 180557.png" alt="批注 2020-06-11 180557"></p>
+<p>但是<code>uname -a</code>看下靶机的发行版本挺新的，偷瞄了下别人的walkthough，发现是利用<strong>SUID可执行文件运行时可暂时获得文件拥有者的权限</strong>的这个特点来提权的（新技能get）。</p>
+<p>使用命令<code>find / -perm -u=s -type f 2&gt;/dev/null</code>搜索所有SUID可执行文件，发现个<code>base32</code>可以用来任意文件读取。</p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 192013.png" alt="批注 2020-06-11 192013"></p>
+<p>用<code>base32 /root/flag.txt | base32 -d</code>直接读flag或者<code>base32 /root/.ssh/id_rsa | base32 -d</code>读ssh私钥在本地导入即可。</p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 192903.png" alt="批注 2020-06-11 192903"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.hackingarticles.in/linux-privilege-escalation-using-suid-binaries/" target="_blank" rel="noopener">Linux Privilege Escalation using SUID Binaries</a></p>
 
         </div>
         
             <ul class="post-copyright">
-            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2022/06/12/Sumo walkthrough/">Sumo walkthrought</a></li>
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2022/06/11/Geisha-walkthrough/">Geisha walkthrought</a></li>
             <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
-            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2022/06/12/Sumo walkthrough/">https://blog.play2win.top/2022/06/12/Sumo walkthrough/</a></li>
-            <li><strong>发布时间：</strong>2022-06-12</li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2022/06/11/Geisha-walkthrough/">https://blog.play2win.top/2022/06/11/Geisha-walkthrough/</a></li>
+            <li><strong>发布时间：</strong>2022-06-11</li>
             <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
             </li>
             </ul>
@@ -207,10 +197,17 @@
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2022/06/12/Sumo-walkthrough/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Sumo walkthrought</span>
+            </a>
+        </div>
+        
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/2022/06/11/Geisha walkthrough/">
-                <span class="level-item">Geisha walkthrought</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/2022/05/27/GKCTF 2020 Domo分析/">
+                <span class="level-item">[PWN]GKCTF 2020 Domo分析</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -231,7 +228,7 @@
     var gitalk = new Gitalk({
         clientID: '372fb49f2243341bf93b',
         clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
-        id: 'fe5c50dcac8af9e8c8623d96337587a1',
+        id: 'd890daa95b5bb879b63d9751cc949a8b',
         repo: 'p1ay2win.github.io',
         owner: 'p1ay2win',
         admin: "p1ay2win",
@@ -349,9 +346,13 @@
         <span class="has-mr-6">1</span>
         <span>前言</span>
         </a></li><li>
-        <a class="is-flex" href="#利用过程">
+        <a class="is-flex" href="#利用">
         <span class="has-mr-6">2</span>
-        <span>利用过程</span>
+        <span>利用</span>
+        </a></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">3</span>
+        <span>参考</span>
         </a></li></ul>
             </div>
         </div>
