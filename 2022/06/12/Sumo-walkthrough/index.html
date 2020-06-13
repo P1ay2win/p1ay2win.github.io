@@ -132,7 +132,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    2 分钟 读完 (大约 327 个字)
+                    2 分钟 读完 (大约 313 个字)
                 </span>
                 
                 
@@ -154,15 +154,15 @@
 </blockquote>
 <a id="more"></a>
 <h2 id="利用过程"><a href="#利用过程" class="headerlink" title="利用过程"></a>利用过程</h2><p>拿到手肯定是要信息收集一波，nmap扫到只开放了22端口和80端口。</p>
-<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 085032.png" alt="批注 2020-06-12 085032"></p>
+<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 085032.png" alt></p>
 <p>80端口进去是默认页面，目录扫出了<code>cgi-bin</code>和<code>server-status</code>目录，状态码都是403。</p>
-<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 085641.png" alt="批注 2020-06-12 085641"></p>
+<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 085641.png" alt></p>
 <p>再用nikto扫下，扫出来了CVE-2014-6278和CVE-2014-6271，是bash命令注入的漏洞，msf里已有exp。</p>
-<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 085914.png" alt="批注 2020-06-12 085914"></p>
+<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 085914.png" alt></p>
 <p>进msf选中利用模块，设置好参数，攻击后正常返回一个meterpreter session。</p>
-<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 091414.png" alt="批注 2020-06-12 091414"></p>
+<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 091414.png" alt></p>
 <p>启动一个shell之后，运行<code>whoami</code>命令和<code>uname -a</code>命令。当前用户是www-data，并且发现内核版本较低，可用dirtycow提权。</p>
-<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 091829.png" alt="批注 2020-06-12 091829"></p>
+<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 091829.png" alt></p>
 <p>使用github上的exp</p>
 <blockquote>
 <p><a href="https://github.com/FireFart/dirtycow" target="_blank" rel="noopener">https://github.com/FireFart/dirtycow</a></p>
@@ -170,9 +170,9 @@
 <p>上传到靶机，并用以下命令编译运行</p>
 <figure class="highlight shell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gcc dirty.c -o dirty lpthread</span><br><span class="line">./dirty &lt;new_password&gt;</span><br></pre></td></tr></table></figure>
 <p>命令执行后要等一段时间，成功后会创建名为firefart的root用户，密码为运行命令时输入的密码。</p>
-<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 093344.png" alt="批注 2020-06-12 093344"></p>
+<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 093344.png" alt></p>
 <p>ssh登录上去，在/root目录即可获得flag。</p>
-<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 093542.png" alt="批注 2020-06-12 093542"></p>
+<p><img src="/2022/06/12/Sumo-walkthrough/批注 2020-06-12 093542.png" alt></p>
 
         </div>
         
@@ -190,7 +190,7 @@
             <div class="level-start">
                 <div class="level-item">
                     <span class="is-size-6 has-text-grey has-mr-7">#</span>
-                    <a class="has-link-grey -link" href="/tags/提权/">提权"</a>, <a class="has-link-grey -link" href="/tags/靶机/">靶机</a>
+                    <a class="has-link-grey -link" href="/tags/提权/">提权</a>, <a class="has-link-grey -link" href="/tags/靶机/">靶机</a>
                 </div>
             </div>
         </div>
@@ -206,6 +206,13 @@
 
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2022/06/13/CengBox2_walkthrough/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">CengBox2 walkthrought</span>
+            </a>
+        </div>
         
         
         <div class="level-end">
@@ -288,7 +295,7 @@
                         文章
                     </p>
                     <p class="title has-text-weight-normal">
-                        9
+                        10
                     </p>
                 </div>
             </div>

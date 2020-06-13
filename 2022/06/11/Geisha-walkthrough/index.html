@@ -132,7 +132,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    3 分钟 读完 (大约 405 个字)
+                    3 分钟 读完 (大约 395 个字)
                 </span>
                 
                 
@@ -152,16 +152,16 @@
 <p>起手先去vulnhub找了个入门到中间难度的靶机<a href="https://www.vulnhub.com/entry/geisha-1,481/" target="_blank" rel="noopener">Geisha</a>(叫<strong>给啥</strong>？？)，目标：Get the root shell and then obtain flag under /root)。</p>
 <a id="more"></a>
 <h2 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h2><p>把所有端口都扫了一遍，发现开启了ftp、ssh和很多http服务的端口。</p>
-<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 174747.png" alt="批注 2020-06-11 174747"></p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 174747.png" alt></p>
 <p>每个http服务主页都是一张图片，没什么功能，但其中在7125端口扫到了passwd和shadow，passwd能下载下来。在shadow里看见有两个账号可登录分别是root和geisha，于是用hydra跑下弱口令。</p>
-<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 180217.png" alt="批注 2020-06-11 180217"></p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 180217.png" alt></p>
 <p>用个小字典一下子就跑出来了，事情发展到目前为止似乎还挺顺利。</p>
-<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 180557.png" alt="批注 2020-06-11 180557"></p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 180557.png" alt></p>
 <p>但是<code>uname -a</code>看下靶机的发行版本挺新的，偷瞄了下别人的walkthough，发现是利用<strong>SUID可执行文件运行时可暂时获得文件拥有者的权限</strong>的这个特点来提权的（新技能get）。</p>
 <p>使用命令<code>find / -perm -u=s -type f 2&gt;/dev/null</code>搜索所有SUID可执行文件，发现个<code>base32</code>可以用来任意文件读取。</p>
-<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 192013.png" alt="批注 2020-06-11 192013"></p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 192013.png" alt></p>
 <p>用<code>base32 /root/flag.txt | base32 -d</code>直接读flag或者<code>base32 /root/.ssh/id_rsa | base32 -d</code>读ssh私钥在本地导入即可。</p>
-<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 192903.png" alt="批注 2020-06-11 192903"></p>
+<p><img src="/2022/06/11/Geisha-walkthrough/批注 2020-06-11 192903.png" alt></p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.hackingarticles.in/linux-privilege-escalation-using-suid-binaries/" target="_blank" rel="noopener">Linux Privilege Escalation using SUID Binaries</a></p>
 
         </div>
@@ -180,7 +180,7 @@
             <div class="level-start">
                 <div class="level-item">
                     <span class="is-size-6 has-text-grey has-mr-7">#</span>
-                    <a class="has-link-grey -link" href="/tags/提权/">提权"</a>, <a class="has-link-grey -link" href="/tags/靶机/">靶机</a>
+                    <a class="has-link-grey -link" href="/tags/提权/">提权</a>, <a class="has-link-grey -link" href="/tags/靶机/">靶机</a>
                 </div>
             </div>
         </div>
@@ -285,7 +285,7 @@
                         文章
                     </p>
                     <p class="title has-text-weight-normal">
-                        9
+                        10
                     </p>
                 </div>
             </div>
