@@ -8,7 +8,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
 <title>CengBox2 walkthrought - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CengBox2 walkthrought | P1ay2win's blog">
 
+<meta property="og:description" content="想写个博客，记录信息安全的学习历程。">
+
+<meta property="og:image" content="">
 
 
 
@@ -132,7 +139,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    7 分钟 读完 (大约 1077 个字)
+                    7 分钟 读完 (大约 1074 个字)
                 </span>
                 
                 
@@ -153,6 +160,8 @@
 <p><a href="https://www.vulnhub.com/entry/cengbox-2,486/" target="_blank" rel="noopener">https://www.vulnhub.com/entry/cengbox-2,486/</a></p>
 </blockquote>
 <a id="more"></a>
+<meta property="og:image" content="批注 2020-06-12 212808.png">
+
 <h2 id="利用过程"><a href="#利用过程" class="headerlink" title="利用过程"></a>利用过程</h2><p>使用nmap扫描出21，22和80端口。</p>
 <figure class="highlight shell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -sV -T 4 -p- 192.168.100.102</span><br></pre></td></tr></table></figure>
 <p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-12 212808.png" alt></p>
@@ -162,7 +171,7 @@
 <figure class="highlight shell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hydra -P /usr/share/wordlists/fasttrack.txt -L userlist.txt ftp://192.168.100.102</span><br></pre></td></tr></table></figure>
 <p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-12 214356.png" alt></p>
 <p>登录进去有一则留言，说在一个新的域名<code>ceng-company.vm</code>里设置了一个面板，并为Kevin创建一个用户，密码为默认密码，那就是弱口令咯 :D</p>
-<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-12 214505.png" style="zoom:150%;"></p>
+<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-12 214505.png" style="width:100%;"></p>
 <blockquote>
 <p>Hey Kevin,<br>I just set up your panel and used default password. Please change them before any hack.</p>
 <p>I try to move site to new domain which name is ceng-company.vm and also I created a new area for you.</p>
@@ -171,14 +180,14 @@
 <p>当我改/etc/hosts令ceng-company.vm解析为192.168.100.102，重新回到页面，它还是原来的样子。</p>
 <p>去偷瞄了下别人的walkthrough，网站原来是在子域名里。由于常用的一些子域名爆破工具都是居于DNS的，在这里肯定是没法用的，所以直接把字典导入到burpsuite里，改Host爆破即可。</p>
 <p>爆破到admin时可用看见返回的状态码和长度都跟别的不一样，所以可以确定正确的子域名就是这个了。</p>
-<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-12 134339.png" alt></p>
+<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-12 134339.png" style="width:100%;"></p>
 <p>再在/etc/hosts里加一条admin.cencompany.vm解析到192.168.100.102。接下来依旧要爆破目录，一开始使用默认的字典没爆破出什么东西，后来换成dirburster的大字典就可以了。这里我用的是dirseach来爆破。</p>
 <figure class="highlight shell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 dirsearch.py -u http://admin.ceng-company.vm/ -e all -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 100</span><br></pre></td></tr></table></figure>
 <p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-12 233818.png" alt></p>
 <p>网站是Gila CMS，搜到了两个有点用的洞，本地文件包含和文件上传绕过。</p>
 <p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-12 235642.png" alt></p>
 <p>后台为admin，用户名提示为邮箱，那就用<a href="mailto:kevin@ceng-company.vm" target="_blank" rel="noopener">kevin@ceng-company.vm</a>。用burpsuite爆破，没一会就给ban了。</p>
-<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-13 000131.png" style="zoom:150%;"></p>
+<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-13 000131.png" style="width:100%;"></p>
 <p>于是手动爆破，测到admin就进入到后台。进到后台发现不用搜到的漏洞也行，因为有文件管理功能，直接插入一句话即可。</p>
 <p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-13 083840.png" alt></p>
 <p>反弹一个shell，用<strong><a href="https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite" target="_blank" rel="noopener">Privilege Escalation Awesome Scripts SUITE</a></strong>扫描了下可能可以提权的点。发现www-data可以无需密码，以swartz的身份运行/home/swartz/runphp.sh。</p>
@@ -189,9 +198,9 @@
 <p>现在就显示正常了。</p>
 <p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-13 093055.png" alt></p>
 <p>再输入<code>system(&quot;/bin/bash&quot;);</code>弹出swartz的shell，用提权脚本重新扫描下，发现swartz可以读mitnick用户目录下的ssh私钥。</p>
-<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-13 094307.png" style="zoom: 200%;"></p>
+<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-13 094307.png" style="width: 100%;"></p>
 <p>把私钥下载下来，使用私钥连接ssh时，发现是需要passphrase的。</p>
-<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-13 094709.png" style="zoom:200%;"></p>
+<p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-13 094709.png" style="width:100%;"></p>
 <p>john可以破解passphrase，先把ssh私钥转为john可识别的格式，再进行爆破。</p>
 <figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py /tmp/rsa &gt; /tmp/tmp</span><br><span class="line">john --wordlist=/usr/share/wordlists/rockyou.txt /tmp/tmp</span><br></pre></td></tr></table></figure>
 <p><img src="/2022/06/13/CengBox2_walkthrough/批注 2020-06-13 095518.png" alt></p>
