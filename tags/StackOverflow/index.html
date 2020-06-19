@@ -12,8 +12,8 @@
 <meta property="og:site_name" content="P1ay2win's blog">
 <meta property="og:type" content="website">
 <meta property="og:title" content=" | P1ay2win's blog">
-<meta property="og:image" content="/tags/StackOverflow/index.html">
-<meta property="twitter:image" content="https://blog.play2win.top">
+<meta property="og:image" content="https://blog.play2win.top/tags/StackOverflow/index.html">
+<meta property="twitter:image" content="https://blog.play2win.top/tags/StackOverflow/index.html">
 
 
 
@@ -139,13 +139,17 @@
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2022-03-06T09:42:27.000Z">2022-03-06</time>
+                <time class="level-item has-text-grey" datetime="2019-05-25T00:48:27.000Z">2019-05-25</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/PWN/">PWN</a>
+                </div>
                 
                 
                 <span class="level-item has-text-grey">
                     
                     
-                    3 分钟 读完 (大约 390 个字)
+                    6 分钟 读完 (大约 851 个字)
                 </span>
                 
                 
@@ -155,16 +159,13 @@
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                <a class="has-link-black-ter" href="/2022/03/06/PWN-cmcc_simplerop/">[PWN]cmcc_simplerop</a>
+                <a class="has-link-black-ter" href="/2019/05/25/PWN-栈溢出-ROP学习笔记/">[PWN]栈溢出-ROP学习笔记</a>
             
         </h1>
         <div class="content">
-            <h2 id="cmcc-simplerop-Writeup"><a href="#cmcc-simplerop-Writeup" class="headerlink" title="cmcc_simplerop Writeup"></a>cmcc_simplerop Writeup</h2><blockquote>
-<p><a href="https://buuoj.cn/challenges#cmcc_simplerop" target="_blank" rel="noopener">https://buuoj.cn/challenges#cmcc_simplerop</a></p>
+            <h2 id="ROP简介"><a href="#ROP简介" class="headerlink" title="ROP简介"></a>ROP简介</h2><blockquote>
+<p><strong><a href="https://zh.wikipedia.org/wiki/%E8%BF%94%E5%9B%9E%E5%AF%BC%E5%90%91%E7%BC%96%E7%A8%8B" target="_blank" rel="noopener">面向返回编程</a></strong>（英语：Return-Oriented Programming，缩写：ROP）是计算机安全漏洞利用技术，该技术允许攻击者在安全防御（主要为<strong>NX</strong>， 堆栈不可执行保护）的情况下执行代码，如不可执行的内存和代码签名。攻击者控制堆栈调用以劫持程序控制流并执行针对性的机器语言指令序列（称为<strong>Gadgets</strong>）。 每一段gadget通常结束于<strong>return</strong>指令，并位于共享库代码中的子程序。</p>
 </blockquote>
-<p>IDA打开附件发现主程序就是简单的栈溢出。</p>
-<p><img src="/2022/03/06/PWN-cmcc_simplerop/批注 2020-03-06 171020.png" alt></p>
-<p>并且是静态链接的程序，查找system函数不存在，但发现了mprotect函数。</p>
         </div>
         
         
@@ -172,7 +173,7 @@
         <div class="level is-mobile">
             <div class="level-start">
                 <div class="level-item">
-                <a class="button is-size-7 is-light" href="/2022/03/06/PWN-cmcc_simplerop/#more">阅读更多</a>
+                <a class="button is-size-7 is-light" href="/2019/05/25/PWN-栈溢出-ROP学习笔记/#more">阅读更多</a>
                 </div>
             </div>
         </div>
@@ -243,7 +244,7 @@
                         分类
                     </p>
                     <p class="title has-text-weight-normal">
-                        0
+                        4
                     </p>
                 </div>
             </div>
@@ -253,7 +254,7 @@
                         标签
                     </p>
                     <p class="title has-text-weight-normal">
-                        9
+                        13
                     </p>
                 </div>
             </div>
@@ -327,7 +328,39 @@
                 分类
             </h3>
             <ul class="menu-list">
-            
+            <li>
+        <a class="level is-marginless" href="/categories/CTF/">
+            <span class="level-start">
+                <span class="level-item">CTF</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/PWN/">
+            <span class="level-start">
+                <span class="level-item">PWN</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/逆向/">
+            <span class="level-start">
+                <span class="level-item">逆向</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/靶机/">
+            <span class="level-start">
+                <span class="level-item">靶机</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li>
             </ul>
         </div>
     </div>
@@ -338,7 +371,7 @@
         <h3 class="menu-label">
             标签云
         </h3>
-        <a href="/tags/CTF/" style="font-size: 15px;">CTF</a> <a href="/tags/HeapOverflow/" style="font-size: 10px;">HeapOverflow</a> <a href="/tags/PWN/" style="font-size: 20px;">PWN</a> <a href="/tags/ROP/" style="font-size: 10px;">ROP</a> <a href="/tags/StackOverflow/" style="font-size: 10px;">StackOverflow</a> <a href="/tags/提权/" style="font-size: 20px;">提权</a> <a href="/tags/算法分析/" style="font-size: 10px;">算法分析</a> <a href="/tags/逆向/" style="font-size: 15px;">逆向</a> <a href="/tags/靶机/" style="font-size: 20px;">靶机</a>
+        <a href="/tags/CAP/" style="font-size: 10px;">CAP</a> <a href="/tags/HeapOverflow/" style="font-size: 10px;">HeapOverflow</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/ORW/" style="font-size: 10px;">ORW</a> <a href="/tags/ROP/" style="font-size: 10px;">ROP</a> <a href="/tags/SQL/" style="font-size: 10px;">SQL</a> <a href="/tags/SSTI/" style="font-size: 10px;">SSTI</a> <a href="/tags/SUID/" style="font-size: 10px;">SUID</a> <a href="/tags/StackOverflow/" style="font-size: 10px;">StackOverflow</a> <a href="/tags/XSS/" style="font-size: 10px;">XSS</a> <a href="/tags/machineKey/" style="font-size: 10px;">machineKey</a> <a href="/tags/update-motd/" style="font-size: 10px;">update-motd</a> <a href="/tags/脏牛/" style="font-size: 10px;">脏牛</a>
     </div>
 </div>
     
@@ -353,6 +386,25 @@
         
         <article class="media">
             
+            <a href="/2022/06/19/Katana_walkthough/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/katana.jpg" alt="Katana walkthrought">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-06-19T01:57:27.000Z">2022-06-19</time></div>
+                    <a href="/2022/06/19/Katana_walkthough/" class="title has-link-black-ter is-size-6 has-text-weight-normal">Katana walkthrought</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
             <a href="/2022/06/13/CengBox2_walkthrough/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="CengBox2 walkthrought">
@@ -364,7 +416,7 @@
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-06-13T02:49:27.000Z">2022-06-13</time></div>
                     <a href="/2022/06/13/CengBox2_walkthrough/" class="title has-link-black-ter is-size-6 has-text-weight-normal">CengBox2 walkthrought</a>
                     <p class="is-size-7 is-uppercase">
-                        
+                        <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
                     </p>
                 </div>
             </div>
@@ -383,7 +435,7 @@
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-06-12T01:41:27.000Z">2022-06-12</time></div>
                     <a href="/2022/06/12/Sumo-walkthrough/" class="title has-link-black-ter is-size-6 has-text-weight-normal">Sumo walkthrought</a>
                     <p class="is-size-7 is-uppercase">
-                        
+                        <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
                     </p>
                 </div>
             </div>
@@ -402,7 +454,7 @@
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-06-11T11:38:27.000Z">2022-06-11</time></div>
                     <a href="/2022/06/11/Geisha-walkthrough/" class="title has-link-black-ter is-size-6 has-text-weight-normal">Geisha walkthrought</a>
                     <p class="is-size-7 is-uppercase">
-                        
+                        <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
                     </p>
                 </div>
             </div>
@@ -421,26 +473,7 @@
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-05-27T13:05:27.000Z">2022-05-27</time></div>
                     <a href="/2022/05/27/GKCTF 2020 Domo分析/" class="title has-link-black-ter is-size-6 has-text-weight-normal">[PWN]GKCTF 2020 Domo分析</a>
                     <p class="is-size-7 is-uppercase">
-                        
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2022/05/26/GKCTF_2020_Writeup/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/WechatIMG1350.jpeg" alt="GKCTF_2020_Writeup">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-05-26T15:14:27.000Z">2022-05-26</time></div>
-                    <a href="/2022/05/26/GKCTF_2020_Writeup/" class="title has-link-black-ter is-size-6 has-text-weight-normal">GKCTF_2020_Writeup</a>
-                    <p class="is-size-7 is-uppercase">
-                        
+                        <a class="has-link-grey -link" href="/categories/PWN/">PWN</a>
                     </p>
                 </div>
             </div>
@@ -463,7 +496,7 @@
                     <span class="level-item">六月 2022</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">3</span>
+                    <span class="level-item tag">4</span>
                 </span>
             </a>
         </li>
@@ -485,7 +518,7 @@
                     <span class="level-item">三月 2022</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">2</span>
+                    <span class="level-item tag">1</span>
                 </span>
             </a>
         </li>
@@ -526,9 +559,9 @@
             <div class="field is-grouped is-grouped-multiline">
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/CTF/">
-                        <span class="tag">CTF</span>
-                        <span class="tag is-grey">2</span>
+                    <a class="tags has-addons" href="/tags/CAP/">
+                        <span class="tag">CAP</span>
+                        <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
@@ -540,15 +573,43 @@
                 </div>
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/PWN/">
-                        <span class="tag">PWN</span>
-                        <span class="tag is-grey">3</span>
+                    <a class="tags has-addons" href="/tags/IO-file/">
+                        <span class="tag">IO_file</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/ORW/">
+                        <span class="tag">ORW</span>
+                        <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
                 <div class="control">
                     <a class="tags has-addons" href="/tags/ROP/">
                         <span class="tag">ROP</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/SQL/">
+                        <span class="tag">SQL</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/SSTI/">
+                        <span class="tag">SSTI</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/SUID/">
+                        <span class="tag">SUID</span>
                         <span class="tag is-grey">1</span>
                     </a>
                 </div>
@@ -561,30 +622,30 @@
                 </div>
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/提权/">
-                        <span class="tag">提权</span>
-                        <span class="tag is-grey">3</span>
-                    </a>
-                </div>
-                
-                <div class="control">
-                    <a class="tags has-addons" href="/tags/算法分析/">
-                        <span class="tag">算法分析</span>
+                    <a class="tags has-addons" href="/tags/XSS/">
+                        <span class="tag">XSS</span>
                         <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/逆向/">
-                        <span class="tag">逆向</span>
-                        <span class="tag is-grey">2</span>
+                    <a class="tags has-addons" href="/tags/machineKey/">
+                        <span class="tag">machineKey</span>
+                        <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/靶机/">
-                        <span class="tag">靶机</span>
-                        <span class="tag is-grey">3</span>
+                    <a class="tags has-addons" href="/tags/update-motd/">
+                        <span class="tag">update-motd</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/脏牛/">
+                        <span class="tag">脏牛</span>
+                        <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
@@ -613,6 +674,25 @@
         
         <article class="media">
             
+            <a href="/2022/06/19/Katana_walkthough/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/katana.jpg" alt="Katana walkthrought">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-06-19T01:57:27.000Z">2022-06-19</time></div>
+                    <a href="/2022/06/19/Katana_walkthough/" class="title has-link-black-ter is-size-6 has-text-weight-normal">Katana walkthrought</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
             <a href="/2022/06/13/CengBox2_walkthrough/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="CengBox2 walkthrought">
@@ -624,7 +704,7 @@
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-06-13T02:49:27.000Z">2022-06-13</time></div>
                     <a href="/2022/06/13/CengBox2_walkthrough/" class="title has-link-black-ter is-size-6 has-text-weight-normal">CengBox2 walkthrought</a>
                     <p class="is-size-7 is-uppercase">
-                        
+                        <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
                     </p>
                 </div>
             </div>
@@ -643,7 +723,7 @@
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-06-12T01:41:27.000Z">2022-06-12</time></div>
                     <a href="/2022/06/12/Sumo-walkthrough/" class="title has-link-black-ter is-size-6 has-text-weight-normal">Sumo walkthrought</a>
                     <p class="is-size-7 is-uppercase">
-                        
+                        <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
                     </p>
                 </div>
             </div>
@@ -662,7 +742,7 @@
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-06-11T11:38:27.000Z">2022-06-11</time></div>
                     <a href="/2022/06/11/Geisha-walkthrough/" class="title has-link-black-ter is-size-6 has-text-weight-normal">Geisha walkthrought</a>
                     <p class="is-size-7 is-uppercase">
-                        
+                        <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
                     </p>
                 </div>
             </div>
@@ -681,26 +761,7 @@
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-05-27T13:05:27.000Z">2022-05-27</time></div>
                     <a href="/2022/05/27/GKCTF 2020 Domo分析/" class="title has-link-black-ter is-size-6 has-text-weight-normal">[PWN]GKCTF 2020 Domo分析</a>
                     <p class="is-size-7 is-uppercase">
-                        
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            
-            <a href="/2022/05/26/GKCTF_2020_Writeup/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/WechatIMG1350.jpeg" alt="GKCTF_2020_Writeup">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2022-05-26T15:14:27.000Z">2022-05-26</time></div>
-                    <a href="/2022/05/26/GKCTF_2020_Writeup/" class="title has-link-black-ter is-size-6 has-text-weight-normal">GKCTF_2020_Writeup</a>
-                    <p class="is-size-7 is-uppercase">
-                        
+                        <a class="has-link-grey -link" href="/categories/PWN/">PWN</a>
                     </p>
                 </div>
             </div>
@@ -723,7 +784,7 @@
                     <span class="level-item">六月 2022</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">3</span>
+                    <span class="level-item tag">4</span>
                 </span>
             </a>
         </li>
@@ -745,7 +806,7 @@
                     <span class="level-item">三月 2022</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">2</span>
+                    <span class="level-item tag">1</span>
                 </span>
             </a>
         </li>
@@ -786,9 +847,9 @@
             <div class="field is-grouped is-grouped-multiline">
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/CTF/">
-                        <span class="tag">CTF</span>
-                        <span class="tag is-grey">2</span>
+                    <a class="tags has-addons" href="/tags/CAP/">
+                        <span class="tag">CAP</span>
+                        <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
@@ -800,15 +861,43 @@
                 </div>
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/PWN/">
-                        <span class="tag">PWN</span>
-                        <span class="tag is-grey">3</span>
+                    <a class="tags has-addons" href="/tags/IO-file/">
+                        <span class="tag">IO_file</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/ORW/">
+                        <span class="tag">ORW</span>
+                        <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
                 <div class="control">
                     <a class="tags has-addons" href="/tags/ROP/">
                         <span class="tag">ROP</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/SQL/">
+                        <span class="tag">SQL</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/SSTI/">
+                        <span class="tag">SSTI</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/SUID/">
+                        <span class="tag">SUID</span>
                         <span class="tag is-grey">1</span>
                     </a>
                 </div>
@@ -821,30 +910,30 @@
                 </div>
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/提权/">
-                        <span class="tag">提权</span>
-                        <span class="tag is-grey">3</span>
-                    </a>
-                </div>
-                
-                <div class="control">
-                    <a class="tags has-addons" href="/tags/算法分析/">
-                        <span class="tag">算法分析</span>
+                    <a class="tags has-addons" href="/tags/XSS/">
+                        <span class="tag">XSS</span>
                         <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/逆向/">
-                        <span class="tag">逆向</span>
-                        <span class="tag is-grey">2</span>
+                    <a class="tags has-addons" href="/tags/machineKey/">
+                        <span class="tag">machineKey</span>
+                        <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
                 <div class="control">
-                    <a class="tags has-addons" href="/tags/靶机/">
-                        <span class="tag">靶机</span>
-                        <span class="tag is-grey">3</span>
+                    <a class="tags has-addons" href="/tags/update-motd/">
+                        <span class="tag">update-motd</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/脏牛/">
+                        <span class="tag">脏牛</span>
+                        <span class="tag is-grey">1</span>
                     </a>
                 </div>
                 
