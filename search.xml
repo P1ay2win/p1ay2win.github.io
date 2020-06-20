@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[Seppuku walkthrought]]></title>
+    <url>%2F2022%2F06%2F20%2FSeppuku_walkthrough%2F</url>
+    <content type="text"><![CDATA[前言这个靶机作者自评难度Intermediate到Hard，其实也不难。Web方面考的是信息收集的能力，提权方面考的可提取的点串联利用的能力。 https://www.vulnhub.com/entry/seppuku-1,484/ 利用过程nmap收集端口开启的信息，发现开启了ftp、ssh、samba和好几个的http服务。 习惯先看http的服务。80端口的http服务有nginx的基础认证，先放着。 用dirb扫7080、7601和8088上面的服务，发现7061的目录都存在目录遍历，在keys和secret目录下还有些有用的东西。 分别是ssh的私钥和passwd、shadow的备份和一个字典。先用字典尝试爆破下shadow，shadow最后一个用户的rabbit的a用的是@，跟前面的passwd不一样，于是把他改回来。 用unshadow吧passwd和shadow转为john可以识别的格式，并用john按信息收集到的密码字典进行爆破。 12unshadow passwd.bak shadow.bak &gt; passwd.johnjohn -w=password.lst passwd.john ssh没成功连上，估计就是作者挖的一个坑。接着又用hydra爆破用户seppuku的口令，用信息收集的密码字典成功爆破出来。 依旧用privilege-escalation-awesome-scripts-suite信息收集，看到sudo -l项有个软连接root到tmp的命令，已存在tmp目录，好像没什么用。 但在home目录下发现了个属于root的文件.passwd，文件名和内容看起来像密码。 试了下能登录到samurai，再一次收集信息，sudo -l又有新的东西。 但是tanto的home目录下没有.cgi_bin目录，更没有bin可执行文件。不过在他的.ssh目录下发现了个ssh公钥，马上想到了之前web信息收集到的ssh私钥，ssh成功连上。 到home建个.cgi_bin目录，并输入/bin/bash。 切回seppuku用户，sudo那条命令，成功提取。]]></content>
+      <categories>
+        <category>靶机</category>
+      </categories>
+      <tags>
+        <tag>NOPASSWD</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[Tre1 walkthrought]]></title>
     <url>%2F2022%2F06%2F20%2FTre1_walkthrough%2F</url>
     <content type="text"><![CDATA[前言这个靶机Web部分设计得非常real，提权部分几步走实现提权，主要考的信息收集。总体来说不错得一个靶机。 https://www.vulnhub.com/entry/tre-1,483/ 利用过程nmap开扫，发现开了ssh和80、8082两个端口得http服务。 80和8082端口同时用dirb开扫目录。8082端口除了index.html，并没有发现什么。 80端口下却有不少东西，根路径下数据库连接测试的页面和phpinfo页面。 1dirb http://192.168.189.137/ /usr/share/wordlists/dirb/big.txt -x /usr/share/wordlists/dirb/extensions_common.txt mantisbt目录下还有个漏洞报告的系统。 adminer.php页面尝试弱口令和Mysql客户端文件读取无果。 继续后面的mantisbt目录，发现mantisbt的子目录基本都能目录遍历，在config目录下找到了两个有用的文件：a.txt和data.sql，应该是作者留下了的线索。 a.txt里记录着数据库密码，刚好在adminer能派上用场。 data.sql文件里都是创建数据库的SQL语句，但里面有条插入到mantis_user_table表的操作就明显不寻常。password字段的MD5拿去cmd5匹配得出为root 用a.txt里获取到的数据库密码成功登录进了adminer，首先想到的是into outfile写webshell，然而没权限。 1select &apos;&lt;?php eval($_GET[cmd]);?&gt;&apos; into outfile &apos;/var/www/html/shell.php&apos;; 将password字段的MD5替换为root的MD5，登录进漏洞报告系统。 看见是比较新的版本，毕竟是漏洞报告系统，估计也没什么漏洞。 这时留意到用户表tre的realname不同寻常，看者有点像密码。试下ssh登录，果然就进去了。 上传privilege-escalation-awesome-scripts-suite的脚本收集信息，注意到/usr/bin/目录下的check-system可执行文件可写，并且root用户在运行这个命令。命令内容如下，死循环echo。。。 12345678DATE=`date '+%Y-%m-%d %H:%M:%S'`echo "Service started at $&#123;DATE&#125;" | systemd-cat -p infowhile :doecho "Checking...";sleep 1;done 一开始以为是在定时任务里用到这个命令，然而并没有，仔细找了找发现在/etc/systemd/system/里注册成了服务。 这个目录下的服务会开机启动，sudo -l刚好看见shutdown命令能免密码sudo。 开始想是反弹shell，结果没成功，于是用给find命令赋SUID属性的方提权。 1chmod u+s /usr/bin/find 用man看了下shutdown的使用方法，-r参数能够重启靶机，于是乎… 1sudo /sbin/shutdown -r 0 待重启完重新连上ssh后，find提权老操作。 1find . -exec /bin/bash -p \;]]></content>

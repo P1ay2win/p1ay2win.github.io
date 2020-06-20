@@ -7,13 +7,13 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>[逆向学习笔记]桂林电子科技大学“深信服杯” - P1ay2win&#39;s blog</title>
+<title>Seppuku walkthrought - P1ay2win&#39;s blog</title>
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:site_name" content="P1ay2win's blog">
 <meta property="og:type" content="website">
-<meta property="og:title" content="[逆向学习笔记]桂林电子科技大学“深信服杯” | P1ay2win's blog">
-<meta property="og:image" content="https://blog.play2win.top/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/">
-<meta property="twitter:image" content="https://blog.play2win.top/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/">
+<meta property="og:title" content="Seppuku walkthrought | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2022/06/20/Seppuku_walkthrough/">
+<meta property="twitter:image" content="https://blog.play2win.top/2022/06/20/Seppuku_walkthrough/">
 
 
 
@@ -73,7 +73,7 @@
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/header.png" alt="[逆向学习笔记]桂林电子科技大学“深信服杯”" height="28">
+                <img src="/images/header.png" alt="Seppuku walkthrought" height="28">
                 P1ay2win&#39;s blog
             
             </a>
@@ -132,17 +132,17 @@
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2019-05-23T15:53:53.000Z">2019-05-23</time>
+                <time class="level-item has-text-grey" datetime="2022-06-20T07:52:27.000Z">2022-06-20</time>
                 
                 <div class="level-item">
-                <a class="has-link-grey -link" href="/categories/逆向/">逆向</a>
+                <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
                 </div>
                 
                 
                 <span class="level-item has-text-grey">
                     
                     
-                    3 分钟 读完 (大约 383 个字)
+                    4 分钟 读完 (大约 552 个字)
                 </span>
                 
                 
@@ -154,36 +154,60 @@
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                [逆向学习笔记]桂林电子科技大学“深信服杯”
+                Seppuku walkthrought
             
         </h1>
         <div class="content">
-            <h2 id="0x0number-game"><a href="#0x0number-game" class="headerlink" title="0x0number_game"></a>0x0number_game</h2><p>跟flag直接相关的就是这个函数。</p>
-<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">__<span class="hljs-function">int64 <span class="hljs-title">sub_400917</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> v1; <span class="hljs-comment">// [rsp+0h] [rbp-10h]</span></span><br><span class="line">  <span class="hljs-keyword">signed</span> <span class="hljs-keyword">int</span> i; <span class="hljs-comment">// [rsp+4h] [rbp-Ch]</span></span><br><span class="line">  <span class="hljs-keyword">signed</span> <span class="hljs-keyword">int</span> j; <span class="hljs-comment">// [rsp+8h] [rbp-8h]</span></span><br><span class="line">  <span class="hljs-keyword">int</span> k; <span class="hljs-comment">// [rsp+Ch] [rbp-4h]</span></span><br><span class="line"></span><br><span class="line">  v1 = <span class="hljs-number">1</span>;</span><br><span class="line">  <span class="hljs-keyword">for</span> ( i = <span class="hljs-number">0</span>; i &lt;= <span class="hljs-number">4</span>; ++i )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="hljs-keyword">for</span> ( j = <span class="hljs-number">0</span>; j &lt;= <span class="hljs-number">4</span>; ++j )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="hljs-keyword">for</span> ( k = j + <span class="hljs-number">1</span>; k &lt;= <span class="hljs-number">4</span>; ++k )</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> ( *(&amp;unk_601060 + <span class="hljs-number">5</span> * i + j) == *(&amp;unk_601060 + <span class="hljs-number">5</span> * i + k) )</span><br><span class="line">          v1 = <span class="hljs-number">0</span>;</span><br><span class="line">        <span class="hljs-keyword">if</span> ( *(&amp;unk_601060 + <span class="hljs-number">5</span> * j + i) == *(&amp;unk_601060 + <span class="hljs-number">5</span> * k + i) )</span><br><span class="line">          v1 = <span class="hljs-number">0</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-keyword">return</span> v1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这个靶机作者自评难度Intermediate到Hard，其实也不难。Web方面考的是信息收集的能力，提权方面考的可提取的点串联利用的能力。</p>
+<blockquote>
+<p><a href="https://www.vulnhub.com/entry/seppuku-1,484/" target="_blank" rel="noopener">https://www.vulnhub.com/entry/seppuku-1,484/</a></p>
+</blockquote>
 <a id="more"></a>
-<p>分析了一下，题目的要求就是补全一个硬编码在内存里的5x5矩阵，它的横竖不能有相同的数字。在根据前面只能输入0~5的数字，手动一下，很容易还原了矩阵。</p>
-<p><img src="/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/微信截图_20190523204407.png" alt></p>
-<p>得到还原出来的字符串，但这是通了前两个函数偏移的出来的矩阵。</p>
-<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">_QWORD *__<span class="hljs-function">fastcall <span class="hljs-title">sub_400758</span><span class="hljs-params">(__int64 <span class="hljs-built_in">cin</span>, <span class="hljs-keyword">int</span> offset, <span class="hljs-keyword">int</span> a3)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  _QWORD *v4; <span class="hljs-comment">// rax</span></span><br><span class="line">  _QWORD *v5; <span class="hljs-comment">// ST28_8</span></span><br><span class="line">  <span class="hljs-keyword">int</span> str_long; <span class="hljs-comment">// [rsp+0h] [rbp-30h]</span></span><br><span class="line">  <span class="hljs-keyword">char</span> v7; <span class="hljs-comment">// [rsp+1Fh] [rbp-11h]</span></span><br><span class="line"></span><br><span class="line">  str_long = a3;</span><br><span class="line">  v7 = *(offset + <span class="hljs-built_in">cin</span>);</span><br><span class="line">  <span class="hljs-keyword">if</span> ( v7 == <span class="hljs-number">32</span> || v7 == <span class="hljs-number">10</span> || offset &gt;= a3 )</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-number">0L</span>L;</span><br><span class="line">  v4 = <span class="hljs-built_in">malloc</span>(<span class="hljs-number">0x18</span>uLL);</span><br><span class="line">  v5 = v4;</span><br><span class="line">  *v4 = v7;</span><br><span class="line">  v4[<span class="hljs-number">1</span>] = sub_400758(<span class="hljs-built_in">cin</span>, <span class="hljs-number">2</span> * offset + <span class="hljs-number">1</span>, str_long);</span><br><span class="line">  v5[<span class="hljs-number">2</span>] = sub_400758(<span class="hljs-built_in">cin</span>, <span class="hljs-number">2</span> * (offset + <span class="hljs-number">1</span>), str_long);</span><br><span class="line">  <span class="hljs-keyword">return</span> v5;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">__int64 __<span class="hljs-function">fastcall <span class="hljs-title">sub_400807</span><span class="hljs-params">(__int64 a1, __int64 a2)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  __int64 result; <span class="hljs-comment">// rax</span></span><br><span class="line"></span><br><span class="line">  result = a1;</span><br><span class="line">  <span class="hljs-keyword">if</span> ( a1 )</span><br><span class="line">  &#123;</span><br><span class="line">    sub_400807(*(a1 + <span class="hljs-number">8</span>), a2);</span><br><span class="line">    *(a2 + dword_601080++) = *a1;</span><br><span class="line">    result = sub_400807(*(a1 + <span class="hljs-number">16</span>), a2);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>看来出题人很喜欢递归啊！！！这递归看得眼花缭乱。</p>
-<p><img src="/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/微信图片_20190523205118.jpg" alt></p>
-<p>庆幸的是偏移与输入内容无关。输入0123456789，再patch一下ZF，就能得出原字符串和偏移后的字符串。</p>
-<p><img src="/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/微信截图_20190523192232.png" alt></p>
-<p>整个python脚本跑一跑即可得到flag。</p>
-<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">ch = <span class="hljs-string">'7381940526'</span></span><br><span class="line">code = <span class="hljs-string">'0421421430'</span></span><br><span class="line">flag = [<span class="hljs-string">''</span>,<span class="hljs-string">''</span>,<span class="hljs-string">''</span>,<span class="hljs-string">''</span>,<span class="hljs-string">''</span>,<span class="hljs-string">''</span>,<span class="hljs-string">''</span>,<span class="hljs-string">''</span>,<span class="hljs-string">''</span>,<span class="hljs-string">''</span>]</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> xrange(<span class="hljs-number">10</span>):</span><br><span class="line">	flag[ord(ch[i])-ord(<span class="hljs-string">'0'</span>)]=code[i]</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">print</span> <span class="hljs-string">'flag&#123;'</span>+<span class="hljs-string">''</span>.join(flag)+<span class="hljs-string">'&#125;'</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">#flag&#123;1134240024&#125;</span></span><br></pre></td></tr></table></figure>
+<h2 id="利用过程"><a href="#利用过程" class="headerlink" title="利用过程"></a>利用过程</h2><p>nmap收集端口开启的信息，发现开启了ftp、ssh、samba和好几个的http服务。</p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 113041.png" style="widtth:100%;"></p>
+<p>习惯先看http的服务。80端口的http服务有nginx的基础认证，先放着。</p>
+<p>用dirb扫7080、7601和8088上面的服务，发现7061的目录都存在目录遍历，在keys和secret目录下还有些有用的东西。</p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 114713.png" style="width:100%;"></p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 114837.png" style="width:100%;"></p>
+<p>分别是ssh的私钥和passwd、shadow的备份和一个字典。先用字典尝试爆破下shadow，shadow最后一个用户的rabbit的<code>a</code>用的是<code>@</code>，跟前面的passwd不一样，于是把他改回来。</p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 115306.png" style="width:100%;"></p>
+<p>用unshadow吧passwd和shadow转为john可以识别的格式，并用john按信息收集到的密码字典进行爆破。</p>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">unshadow passwd.bak shadow.bak  &gt; passwd.john</span><br><span class="line">john -w=password.lst passwd.john</span><br></pre></td></tr></table></figure>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 131356.png" alt></p>
+<p>ssh没成功连上，估计就是作者挖的一个坑。接着又用hydra爆破用户seppuku的口令，用信息收集的密码字典成功爆破出来。</p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 135355.png" alt></p>
+<p>依旧用<a href="https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite" target="_blank" rel="noopener">privilege-escalation-awesome-scripts-suite</a>信息收集，看到<code>sudo -l</code>项有个软连接root到tmp的命令，已存在tmp目录，好像没什么用。</p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 150610.png" alt></p>
+<p>但在home目录下发现了个属于root的文件.passwd，文件名和内容看起来像密码。</p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 150810.png" alt></p>
+<p>试了下能登录到samurai，再一次收集信息，<code>sudo -l</code>又有新的东西。</p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 151504.png" alt></p>
+<p>但是tanto的home目录下没有.cgi_bin目录，更没有bin可执行文件。不过在他的.ssh目录下发现了个ssh公钥，马上想到了之前web信息收集到的ssh私钥，ssh成功连上。</p>
+<p>到home建个.cgi_bin目录，并输入<code>/bin/bash</code>。</p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 153117.png" style="width:100%;"></p>
+<p>切回seppuku用户，sudo那条命令，成功提取。</p>
+<p><img src="/2022/06/20/Seppuku_walkthrough/批注 2020-06-20 153900.png" alt></p>
 
         </div>
         
             <ul class="post-copyright">
-            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/">[逆向学习笔记]桂林电子科技大学“深信服杯”</a></li>
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2022/06/20/Seppuku_walkthrough/">Seppuku walkthrought</a></li>
             <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
-            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/">https://blog.play2win.top/2019/05/23/逆向学习笔记-桂林电子科技大学“深信服杯”/</a></li>
-            <li><strong>发布时间：</strong>2019-05-23</li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2022/06/20/Seppuku_walkthrough/">https://blog.play2win.top/2022/06/20/Seppuku_walkthrough/</a></li>
+            <li><strong>发布时间：</strong>2022-06-20</li>
             <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
             </li>
             </ul>
         
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/NOPASSWD/">NOPASSWD</a>
+                </div>
+            </div>
+        </div>
         
         
         
@@ -197,13 +221,13 @@
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
-        <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/2019/05/25/PWN-栈溢出-ROP学习笔记/">
-                <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">[PWN]栈溢出-ROP学习笔记</span>
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2022/06/20/Tre1_walkthrough/">
+                <span class="level-item">Tre1 walkthrought</span>
+                <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
-        
         
     </div>
 </div>
@@ -221,7 +245,7 @@
     var gitalk = new Gitalk({
         clientID: '372fb49f2243341bf93b',
         clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
-        id: '34afacd8a1497d1bbd49c891e95c8950',
+        id: '97fe89d05f2fa2cc2acaba1dd2a9a92a',
         repo: 'p1ay2win.github.io',
         owner: 'p1ay2win',
         admin: "p1ay2win",
@@ -335,9 +359,13 @@
                     目录
                 </h3>
                 <ul class="menu-list"><li>
-        <a class="is-flex" href="#0x0number-game">
+        <a class="is-flex" href="#前言">
         <span class="has-mr-6">1</span>
-        <span>0x0number_game</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#利用过程">
+        <span class="has-mr-6">2</span>
+        <span>利用过程</span>
         </a></li></ul>
             </div>
         </div>
