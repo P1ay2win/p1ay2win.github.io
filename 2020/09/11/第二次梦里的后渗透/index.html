@@ -7,13 +7,13 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>Tre1 walkthrought - P1ay2win&#39;s blog</title>
+<title>记一次梦里的后渗透 - P1ay2win&#39;s blog</title>
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:site_name" content="P1ay2win's blog">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Tre1 walkthrought | P1ay2win's blog">
-<meta property="og:image" content="https://blog.play2win.top/2020/06/20/Tre1_walkthrough/">
-<meta property="twitter:image" content="https://blog.play2win.top/2020/06/20/Tre1_walkthrough/">
+<meta property="og:title" content="记一次梦里的后渗透 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2020/09/11/第二次梦里的后渗透/">
+<meta property="twitter:image" content="https://blog.play2win.top/2020/09/11/第二次梦里的后渗透/">
 
 
 
@@ -73,7 +73,7 @@
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/header.png" alt="Tre1 walkthrought" height="28">
+                <img src="/images/header.png" alt="记一次梦里的后渗透" height="28">
                 P1ay2win&#39;s blog
             
             </a>
@@ -132,17 +132,17 @@
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2020-06-19T16:12:27.000Z">2020-06-20</time>
+                <time class="level-item has-text-grey" datetime="2020-09-11T14:59:27.000Z">2020-09-11</time>
                 
                 <div class="level-item">
-                <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
+                <a class="has-link-grey -link" href="/categories/渗透测试/">渗透测试</a>
                 </div>
                 
                 
                 <span class="level-item has-text-grey">
                     
                     
-                    5 分钟 读完 (大约 721 个字)
+                    5 分钟 读完 (大约 812 个字)
                 </span>
                 
                 
@@ -154,60 +154,43 @@
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                Tre1 walkthrought
+                记一次梦里的后渗透
             
         </h1>
         <div class="content">
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这个靶机Web部分设计得非常real，提权部分几步走实现提权，主要考的信息收集。总体来说不错得一个靶机。</p>
-<blockquote>
-<p><a href="https://www.vulnhub.com/entry/tre-1,483/" target="_blank" rel="noopener">https://www.vulnhub.com/entry/tre-1,483/</a></p>
-</blockquote>
-<a id="more"></a>
-<h2 id="利用过程"><a href="#利用过程" class="headerlink" title="利用过程"></a>利用过程</h2><p>nmap开扫，发现开了ssh和80、8082两个端口得http服务。</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 205853.png" style="width:100%;"></p>
-<p>80和8082端口同时用dirb开扫目录。8082端口除了index.html，并没有发现什么。</p>
-<p>80端口下却有不少东西，根路径下数据库连接测试的页面和phpinfo页面。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.189.137/ /usr/share/wordlists/dirb/big.txt -x /usr/share/wordlists/dirb/extensions_common.txt</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 215834.png" style="width:100%;"></p>
-<p>mantisbt目录下还有个漏洞报告的系统。</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 215923.png" style="width:100%;"></p>
-<p>adminer.php页面尝试弱口令和Mysql客户端文件读取无果。</p>
-<p>继续后面的mantisbt目录，发现mantisbt的子目录基本都能目录遍历，在config目录下找到了两个有用的文件：a.txt和data.sql，应该是作者留下了的线索。</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 221328.png" style="width:100%;"></p>
-<p>a.txt里记录着数据库密码，刚好在adminer能派上用场。</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 221622.png" style="width:100%;"></p>
-<p>data.sql文件里都是创建数据库的SQL语句，但里面有条插入到<code>mantis_user_table</code>表的操作就明显不寻常。password字段的MD5拿去cmd5匹配得出为root</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 222115.png" style="width:100%;"></p>
-<p>用a.txt里获取到的数据库密码成功登录进了adminer，首先想到的是<code>into outfile</code>写webshell，然而没权限。</p>
-<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select &apos;&lt;?php eval($_GET[cmd]);?&gt;&apos; into  outfile &apos;/var/www/html/shell.php&apos;;</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 225201.png" style="width:100%;"></p>
-<p>将<code>password</code>字段的MD5替换为root的MD5，登录进漏洞报告系统。</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 230358.png" style="width:100%;"></p>
-<p>看见是比较新的版本，毕竟是漏洞报告系统，估计也没什么漏洞。</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 231254.png" style="width:100%;"></p>
-<p>这时留意到用户表tre的<code>realname</code>不同寻常，看者有点像密码。试下ssh登录，果然就进去了。</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 233046.png" style="width:100%;"></p>
-<p>上传<a href="https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite" target="_blank" rel="noopener">privilege-escalation-awesome-scripts-suite</a>的脚本收集信息，注意到/usr/bin/目录下的check-system可执行文件可写，并且root用户在运行这个命令。命令内容如下，死循环echo。。。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">DATE=`date <span class="hljs-string">'+%Y-%m-%d %H:%M:%S'</span>`</span><br><span class="line"><span class="hljs-built_in">echo</span> <span class="hljs-string">"Service started at <span class="hljs-variable">$&#123;DATE&#125;</span>"</span> | systemd-cat -p info</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">while</span> :</span><br><span class="line"><span class="hljs-keyword">do</span></span><br><span class="line"><span class="hljs-built_in">echo</span> <span class="hljs-string">"Checking..."</span>;</span><br><span class="line">sleep 1;</span><br><span class="line"><span class="hljs-keyword">done</span></span><br></pre></td></tr></table></figure>
-<p>一开始以为是在定时任务里用到这个命令，然而并没有，仔细找了找发现在/etc/systemd/system/里注册成了服务。</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 235031.png" style="width:100%;"></p>
-<p>这个目录下的服务会开机启动，<code>sudo -l</code>刚好看见<code>shutdown</code>命令能免密码<code>sudo</code>。</p>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-19 235712.png" style="width:100%;"></p>
-<p>开始想是反弹shell，结果没成功，于是用给<code>find</code>命令赋SUID属性的方提权。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chmod u+s /usr/bin/find</span><br></pre></td></tr></table></figure>
-<p>用<code>man</code>看了下<code>shutdown</code>的使用方法，<code>-r</code>参数能够重启靶机，于是乎…</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo /sbin/shutdown -r 0</span><br></pre></td></tr></table></figure>
-<p>待重启完重新连上ssh后，<code>find</code>提权老操作。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find . -<span class="hljs-built_in">exec</span> /bin/bash -p \;</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/20/Tre1_walkthrough/批注 2020-06-20 000602.png" style="width:150%;"></p>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>继上次做了一个后渗透的梦之后，最近又做了一个同样是后渗透的梦，后面就是都是一些基础操作、没什么干货的水文，在梦里还是这么菜。。。呜~呜~呜~</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p>先收集域内信息，存在域，域控和域管理员各两个。</p>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-built_in">net</span> <span class="hljs-built_in">time</span> /domain</span><br><span class="line"><span class="hljs-built_in">net</span> group "domain controllers" /domain</span><br><span class="line"><span class="hljs-built_in">net</span> group "domain admins" /domain</span><br></pre></td></tr></table></figure>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-09-09 202610.png" alt></p>
+<p>在收集下网络、补丁和权限的信息。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ipconfig /all</span><br><span class="line">systeminfo</span><br><span class="line">whoami /priv</span><br></pre></td></tr></table></figure>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-09-10 090928.png" alt></p>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-09-10 094705.png" alt></p>
+<p>刚好其中一台域控主机就是当前这台机子，补丁打得比较勤，又是开启了<code>SeImpersonateProvilege</code>，Potato系列提权即可。</p>
+<h2 id="提取"><a href="#提取" class="headerlink" title="提取"></a>提取</h2><p>查看进程发现了WinDefend，找了个免杀的BadPotato才提了权。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tasklist /svc | findstr WinDefend</span><br></pre></td></tr></table></figure>
+<p> 用BadPotato运行了CS的免杀后门上了线，顺便派生到了msf里。mimikatz读了一波密码，由于系统是Windows2012，所以没有读到明文密码。</p>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-09-10 180048.png" alt></p>
+<p>接着又用Lazagne.exe读了一波密码，但是除了NTLM之外并没有读到其他的密码。</p>
+<h2 id="横向移动"><a href="#横向移动" class="headerlink" title="横向移动"></a>横向移动</h2><p>虽然做了静态免杀，但是微软的动态查杀挺强的，对外扫描不一会就给WinDefend杀了，给横向移动造成了不少困扰。但不会拦截添加用户和添加用户到Administrators组，而且上面有开了远程桌面，可以直接远程桌面连上去，把WinDefend给鲨了。</p>
+<p>后面常规的创建用户加入到Administrators组，CS开启socks代理，但连接远程桌面时候遇到NLA认证问题，查询到freerdp支持NLA，用freerdp解决。</p>
+<p>虽然远程桌面进了去，但是WinDefend通常只有启动这个服务的用户才能停止，一般是system用户，奇怪的是用BadPotato执行停止服务的命令还是没法关闭，好在在superuser上找到了个关闭WinDefend的方法。</p>
+<p>打开gpedit.msc，切换到<code>Computer Configuration &gt; Administrative Templates &gt; Windows Components &gt; Windows Defender</code>，<code>Turn off Windows Defender</code>设置为Enable。</p>
+<p>虽然是没抓到明文密码，但是有NTLM，可用利用Pass The Hash横向移动。由于CS的横向移动是直接传后门的，后面知道域内主机全都有杀软，打完之后全都没上线。</p>
+<p>所以上传了个<a href="https://github.com/Kevin-Robertson/Invoke-TheHash" target="_blank" rel="noopener">Invoke-TheHash</a>来PTH，大部分主机都能执行命令。</p>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-08-31 111335.png" alt></p>
+<p>用powershell下载CS的免杀后门并执行，成功让域内主机都上了线。</p>
+<p>后续的横向移动在上线的主机上收集到一堆txt和web.config里的密码，对1433、ssh和RDP等服务进行爆破，可惜并没有爆破得到。扫了一遍内网web服务，都是些网络设备，还有一个开源的后台，弱口令进了其中一个，但是没什么收货。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>总结下这次的渗透流程：</p>
+<p>getshell-&gt;域信息收集-&gt;提权-&gt;获取NTLM-&gt;关闭WinDefend-&gt;PTH横移动</p>
 
         </div>
         
             <ul class="post-copyright">
-            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/06/20/Tre1_walkthrough/">Tre1 walkthrought</a></li>
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/09/11/第二次梦里的后渗透/">记一次梦里的后渗透</a></li>
             <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
-            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/06/20/Tre1_walkthrough/">https://blog.play2win.top/2020/06/20/Tre1_walkthrough/</a></li>
-            <li><strong>发布时间：</strong>2020-06-20</li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/09/11/第二次梦里的后渗透/">https://blog.play2win.top/2020/09/11/第二次梦里的后渗透/</a></li>
+            <li><strong>发布时间：</strong>2020-09-11</li>
             <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
             </li>
             </ul>
@@ -217,7 +200,7 @@
             <div class="level-start">
                 <div class="level-item">
                     <span class="is-size-6 has-text-grey has-mr-7">#</span>
-                    <a class="has-link-grey -link" href="/tags/SUID/">SUID</a>
+                    <a class="has-link-grey -link" href="/tags/域/">域</a>
                 </div>
             </div>
         </div>
@@ -234,17 +217,10 @@
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
-        <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/06/20/Seppuku_walkthrough/">
-                <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">Seppuku walkthrought</span>
-            </a>
-        </div>
-        
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/2020/06/19/Katana_walkthough/">
-                <span class="level-item">Katana walkthrought</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/2020/09/07/DDCTF2020_WEB_writeup /">
+                <span class="level-item">DDCTF2020 WEB writeup</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -265,7 +241,7 @@
     var gitalk = new Gitalk({
         clientID: '372fb49f2243341bf93b',
         clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
-        id: 'e0131d6345b5a901e46206af7537c63c',
+        id: 'cbfa84d3e1c08228a4089e2b752ce0f8',
         repo: 'p1ay2win.github.io',
         owner: 'p1ay2win',
         admin: "p1ay2win",
@@ -383,9 +359,21 @@
         <span class="has-mr-6">1</span>
         <span>前言</span>
         </a></li><li>
-        <a class="is-flex" href="#利用过程">
+        <a class="is-flex" href="#信息收集">
         <span class="has-mr-6">2</span>
-        <span>利用过程</span>
+        <span>信息收集</span>
+        </a></li><li>
+        <a class="is-flex" href="#提取">
+        <span class="has-mr-6">3</span>
+        <span>提取</span>
+        </a></li><li>
+        <a class="is-flex" href="#横向移动">
+        <span class="has-mr-6">4</span>
+        <span>横向移动</span>
+        </a></li><li>
+        <a class="is-flex" href="#后记">
+        <span class="has-mr-6">5</span>
+        <span>后记</span>
         </a></li></ul>
             </div>
         </div>

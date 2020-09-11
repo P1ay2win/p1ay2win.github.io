@@ -140,6 +140,79 @@
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2020-09-11T14:59:27.000Z">2020-09-11</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/渗透测试/">渗透测试</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    5 分钟 读完 (大约 812 个字)
+                </span>
+                
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2020/09/11/第二次梦里的后渗透/">记一次梦里的后渗透</a>
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>继上次做了一个后渗透的梦之后，最近又做了一个同样是后渗透的梦，后面就是都是一些基础操作、没什么干货的水文，在梦里还是这么菜。。。呜~呜~呜~</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p>先收集域内信息，存在域，域控和域管理员各两个。</p>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-built_in">net</span> <span class="hljs-built_in">time</span> /domain</span><br><span class="line"><span class="hljs-built_in">net</span> group "domain controllers" /domain</span><br><span class="line"><span class="hljs-built_in">net</span> group "domain admins" /domain</span><br></pre></td></tr></table></figure>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-09-09 202610.png" alt></p>
+<p>在收集下网络、补丁和权限的信息。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ipconfig /all</span><br><span class="line">systeminfo</span><br><span class="line">whoami /priv</span><br></pre></td></tr></table></figure>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-09-10 090928.png" alt></p>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-09-10 094705.png" alt></p>
+<p>刚好其中一台域控主机就是当前这台机子，补丁打得比较勤，又是开启了<code>SeImpersonateProvilege</code>，Potato系列提权即可。</p>
+<h2 id="提取"><a href="#提取" class="headerlink" title="提取"></a>提取</h2><p>查看进程发现了WinDefend，找了个免杀的BadPotato才提了权。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tasklist /svc | findstr WinDefend</span><br></pre></td></tr></table></figure>
+<p> 用BadPotato运行了CS的免杀后门上了线，顺便派生到了msf里。mimikatz读了一波密码，由于系统是Windows2012，所以没有读到明文密码。</p>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-09-10 180048.png" alt></p>
+<p>接着又用Lazagne.exe读了一波密码，但是除了NTLM之外并没有读到其他的密码。</p>
+<h2 id="横向移动"><a href="#横向移动" class="headerlink" title="横向移动"></a>横向移动</h2><p>虽然做了静态免杀，但是微软的动态查杀挺强的，对外扫描不一会就给WinDefend杀了，给横向移动造成了不少困扰。但不会拦截添加用户和添加用户到Administrators组，而且上面有开了远程桌面，可以直接远程桌面连上去，把WinDefend给鲨了。</p>
+<p>后面常规的创建用户加入到Administrators组，CS开启socks代理，但连接远程桌面时候遇到NLA认证问题，查询到freerdp支持NLA，用freerdp解决。</p>
+<p>虽然远程桌面进了去，但是WinDefend通常只有启动这个服务的用户才能停止，一般是system用户，奇怪的是用BadPotato执行停止服务的命令还是没法关闭，好在在superuser上找到了个关闭WinDefend的方法。</p>
+<p>打开gpedit.msc，切换到<code>Computer Configuration &gt; Administrative Templates &gt; Windows Components &gt; Windows Defender</code>，<code>Turn off Windows Defender</code>设置为Enable。</p>
+<p>虽然是没抓到明文密码，但是有NTLM，可用利用Pass The Hash横向移动。由于CS的横向移动是直接传后门的，后面知道域内主机全都有杀软，打完之后全都没上线。</p>
+<p>所以上传了个<a href="https://github.com/Kevin-Robertson/Invoke-TheHash" target="_blank" rel="noopener">Invoke-TheHash</a>来PTH，大部分主机都能执行命令。</p>
+<p><img src="/2020/09/11/第二次梦里的后渗透/屏幕截图 2020-08-31 111335.png" alt></p>
+<p>用powershell下载CS的免杀后门并执行，成功让域内主机都上了线。</p>
+<p>后续的横向移动在上线的主机上收集到一堆txt和web.config里的密码，对1433、ssh和RDP等服务进行爆破，可惜并没有爆破得到。扫了一遍内网web服务，都是些网络设备，还有一个开源的后台，弱口令进了其中一个，但是没什么收货。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>总结下这次的渗透流程：</p>
+<p>getshell-&gt;域信息收集-&gt;提权-&gt;获取NTLM-&gt;关闭WinDefend-&gt;PTH横移动</p>
+
+        </div>
+        
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
                 <time class="level-item has-text-grey" datetime="2020-08-10T14:59:27.000Z">2020-08-10</time>
                 
                 <div class="level-item">
@@ -296,7 +369,7 @@
                         文章
                     </p>
                     <p class="title has-text-weight-normal">
-                        18
+                        19
                     </p>
                 </div>
             </div>
@@ -423,7 +496,7 @@
                 <span class="level-item">渗透测试</span>
             </span>
             <span class="level-end">
-                <span class="level-item tag">2</span>
+                <span class="level-item tag">3</span>
             </span>
         </a></li><li>
         <a class="level is-marginless" href="/categories/逆向/">
@@ -452,7 +525,7 @@
         <h3 class="menu-label">
             标签云
         </h3>
-        <a href="/tags/CAP/" style="font-size: 10px;">CAP</a> <a href="/tags/HeapOverflow/" style="font-size: 10px;">HeapOverflow</a> <a href="/tags/ICMP/" style="font-size: 10px;">ICMP</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/NOPASSWD/" style="font-size: 10px;">NOPASSWD</a> <a href="/tags/ORW/" style="font-size: 10px;">ORW</a> <a href="/tags/ROP/" style="font-size: 10px;">ROP</a> <a href="/tags/SQL/" style="font-size: 10px;">SQL</a> <a href="/tags/SSTI/" style="font-size: 20px;">SSTI</a> <a href="/tags/SUID/" style="font-size: 20px;">SUID</a> <a href="/tags/StackOverflow/" style="font-size: 20px;">StackOverflow</a> <a href="/tags/XSS/" style="font-size: 10px;">XSS</a> <a href="/tags/hackthebox/" style="font-size: 10px;">hackthebox</a> <a href="/tags/machineKey/" style="font-size: 10px;">machineKey</a> <a href="/tags/mprotect/" style="font-size: 10px;">mprotect</a> <a href="/tags/update-motd/" style="font-size: 10px;">update-motd</a> <a href="/tags/域/" style="font-size: 10px;">域</a> <a href="/tags/脏牛/" style="font-size: 10px;">脏牛</a>
+        <a href="/tags/CAP/" style="font-size: 10px;">CAP</a> <a href="/tags/HeapOverflow/" style="font-size: 10px;">HeapOverflow</a> <a href="/tags/ICMP/" style="font-size: 10px;">ICMP</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/NOPASSWD/" style="font-size: 10px;">NOPASSWD</a> <a href="/tags/ORW/" style="font-size: 10px;">ORW</a> <a href="/tags/ROP/" style="font-size: 10px;">ROP</a> <a href="/tags/SQL/" style="font-size: 10px;">SQL</a> <a href="/tags/SSTI/" style="font-size: 20px;">SSTI</a> <a href="/tags/SUID/" style="font-size: 20px;">SUID</a> <a href="/tags/StackOverflow/" style="font-size: 20px;">StackOverflow</a> <a href="/tags/XSS/" style="font-size: 10px;">XSS</a> <a href="/tags/hackthebox/" style="font-size: 10px;">hackthebox</a> <a href="/tags/machineKey/" style="font-size: 10px;">machineKey</a> <a href="/tags/mprotect/" style="font-size: 10px;">mprotect</a> <a href="/tags/update-motd/" style="font-size: 10px;">update-motd</a> <a href="/tags/域/" style="font-size: 20px;">域</a> <a href="/tags/脏牛/" style="font-size: 10px;">脏牛</a>
     </div>
 </div>
     
@@ -464,6 +537,25 @@
         <h3 class="menu-label">
             最新文章
         </h3>
+        
+        <article class="media">
+            
+            <a href="/2020/09/11/第二次梦里的后渗透/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="记一次梦里的后渗透">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2020-09-11T14:59:27.000Z">2020-09-11</time></div>
+                    <a href="/2020/09/11/第二次梦里的后渗透/" class="title has-link-black-ter is-size-6 has-text-weight-normal">记一次梦里的后渗透</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/渗透测试/">渗透测试</a>
+                    </p>
+                </div>
+            </div>
+        </article>
         
         <article class="media">
             
@@ -541,25 +633,6 @@
             </div>
         </article>
         
-        <article class="media">
-            
-            <a href="/2020/06/25/icmp_tunnel_learning_note/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/icmp2.png" alt="ICMP隧道学习笔记">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2020-06-25T03:02:27.000Z">2020-06-25</time></div>
-                    <a href="/2020/06/25/icmp_tunnel_learning_note/" class="title has-link-black-ter is-size-6 has-text-weight-normal">ICMP隧道学习笔记</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/渗透测试/">渗透测试</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
     </div>
 </div>
         
@@ -577,7 +650,7 @@
                     <span class="level-item">九月 2020</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">1</span>
+                    <span class="level-item tag">2</span>
                 </span>
             </a>
         </li>
@@ -776,7 +849,7 @@
                 <div class="control">
                     <a class="tags has-addons" href="/tags/域/">
                         <span class="tag">域</span>
-                        <span class="tag is-grey">1</span>
+                        <span class="tag is-grey">2</span>
                     </a>
                 </div>
                 
@@ -812,6 +885,25 @@
         
         <article class="media">
             
+            <a href="/2020/09/11/第二次梦里的后渗透/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="记一次梦里的后渗透">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2020-09-11T14:59:27.000Z">2020-09-11</time></div>
+                    <a href="/2020/09/11/第二次梦里的后渗透/" class="title has-link-black-ter is-size-6 has-text-weight-normal">记一次梦里的后渗透</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/渗透测试/">渗透测试</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
             <a href="/2020/09/07/DDCTF2020_WEB_writeup /" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/home-back.png" alt="DDCTF2020 WEB writeup">
@@ -886,25 +978,6 @@
             </div>
         </article>
         
-        <article class="media">
-            
-            <a href="/2020/06/25/icmp_tunnel_learning_note/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/icmp2.png" alt="ICMP隧道学习笔记">
-                </p>
-            </a>
-            
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2020-06-25T03:02:27.000Z">2020-06-25</time></div>
-                    <a href="/2020/06/25/icmp_tunnel_learning_note/" class="title has-link-black-ter is-size-6 has-text-weight-normal">ICMP隧道学习笔记</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/渗透测试/">渗透测试</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
     </div>
 </div>
     
@@ -922,7 +995,7 @@
                     <span class="level-item">九月 2020</span>
                 </span>
                 <span class="level-end">
-                    <span class="level-item tag">1</span>
+                    <span class="level-item tag">2</span>
                 </span>
             </a>
         </li>
@@ -1121,7 +1194,7 @@
                 <div class="control">
                     <a class="tags has-addons" href="/tags/域/">
                         <span class="tag">域</span>
-                        <span class="tag is-grey">1</span>
+                        <span class="tag is-grey">2</span>
                     </a>
                 </div>
                 
