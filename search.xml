@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title><![CDATA[记一次梦里的后渗透]]></title>
+    <title><![CDATA[用不可描述的软件做HTB的前置代理]]></title>
+    <url>%2F2020%2F10%2F05%2F%E7%94%A8%E4%B8%8D%E5%8F%AF%E6%8F%8F%E8%BF%B0%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%81%9AHTB%E7%9A%84%E5%89%8D%E7%BD%AE%E4%BB%A3%E7%90%86%2F</url>
+    <content type="text"><![CDATA[前言​前段时间打HTB，一直受到速度慢的困扰，有时等待一些静态资源加载都要好久。由于一些众所周知的原因，而且HTB提供的代理是OpenVpn，更是被重点关注，于是摸索出来给HTB的OpenVpn加个前置代理的方法，可以加快点速度。 准备工作 不可描述软件酸酸乳和账号一个（我用的酸酸乳，用V2什么的应该也是可以的吧） 右键酸酸乳的运行图标，点击端口设置。像下图一样，添加一个端口设置。开关打开、类型选端口转发，目标地址用的HTB节点的域名，按实际情况填，本地端口随意。 修改配置文件按照官网上的指引修改协议为tcp（酸酸乳默认只支持tcp）。 修改udp协议为tcp、修改remote的端口为端口转发的本地监听端口、服务器地址改为端口转发监听的网卡ip地址、修改&lt;tls-auth&gt;标签为&lt;tls-crypt&gt;。 修改好并保存，启动openvpn应该就能正常运行了，虽然还是很慢，但静态文件至少还能加载，还是充钱才能变得更强啊。]]></content>
+      <categories>
+        <category>日常</category>
+      </categories>
+  </entry>
+  <entry>
+    <title><![CDATA[第二次梦里的后渗透]]></title>
     <url>%2F2020%2F09%2F11%2F%E7%AC%AC%E4%BA%8C%E6%AC%A1%E6%A2%A6%E9%87%8C%E7%9A%84%E5%90%8E%E6%B8%97%E9%80%8F%2F</url>
     <content type="text"><![CDATA[前言继上次做了一个后渗透的梦之后，最近又做了一个同样是后渗透的梦，后面就是都是一些基础操作、没什么干货的水文，在梦里还是这么菜。。。呜~呜~呜~ 信息收集先收集域内信息，存在域，域控和域管理员各两个。 123net time /domainnet group "domain controllers" /domainnet group "domain admins" /domain 在收集下网络、补丁和权限的信息。 123ipconfig /allsysteminfowhoami /priv 刚好其中一台域控主机就是当前这台机子，补丁打得比较勤，又是开启了SeImpersonateProvilege，Potato系列提权即可。 提取查看进程发现了WinDefend，找了个免杀的BadPotato才提了权。 1tasklist /svc | findstr WinDefend 用BadPotato运行了CS的免杀后门上了线，顺便派生到了msf里。mimikatz读了一波密码，由于系统是Windows2012，所以没有读到明文密码。 接着又用Lazagne.exe读了一波密码，但是除了NTLM之外并没有读到其他的密码。 横向移动虽然做了静态免杀，但是微软的动态查杀挺强的，对外扫描不一会就给WinDefend杀了，给横向移动造成了不少困扰。但不会拦截添加用户和添加用户到Administrators组，而且上面有开了远程桌面，可以直接远程桌面连上去，把WinDefend给鲨了。 后面常规的创建用户加入到Administrators组，CS开启socks代理，但连接远程桌面时候遇到NLA认证问题，查询到freerdp支持NLA，用freerdp解决。 虽然远程桌面进了去，但是WinDefend通常只有启动这个服务的用户才能停止，一般是system用户，奇怪的是用BadPotato执行停止服务的命令还是没法关闭，好在在superuser上找到了个关闭WinDefend的方法。 打开gpedit.msc，切换到Computer Configuration &gt; Administrative Templates &gt; Windows Components &gt; Windows Defender，Turn off Windows Defender设置为Enable。 虽然是没抓到明文密码，但是有NTLM，可用利用Pass The Hash横向移动。由于CS的横向移动是直接传后门的，后面知道域内主机全都有杀软，打完之后全都没上线。 所以上传了个Invoke-TheHash来PTH，大部分主机都能执行命令。 用powershell下载CS的免杀后门并执行，成功让域内主机都上了线。 后续的横向移动在上线的主机上收集到一堆txt和web.config里的密码，对1433、ssh和RDP等服务进行爆破，可惜并没有爆破得到。扫了一遍内网web服务，都是些网络设备，还有一个开源的后台，弱口令进了其中一个，但是没什么收货。 后记总结下这次的渗透流程： getshell-&gt;域信息收集-&gt;提权-&gt;获取NTLM-&gt;关闭WinDefend-&gt;PTH横移动]]></content>
       <categories>

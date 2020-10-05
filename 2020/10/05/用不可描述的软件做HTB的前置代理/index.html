@@ -7,13 +7,13 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>GlasgowSmile walkthrought - P1ay2win&#39;s blog</title>
+<title>用不可描述的软件做HTB的前置代理 - P1ay2win&#39;s blog</title>
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:site_name" content="P1ay2win's blog">
 <meta property="og:type" content="website">
-<meta property="og:title" content="GlasgowSmile walkthrought | P1ay2win's blog">
-<meta property="og:image" content="https://blog.play2win.top/2020/06/28/GlasgowSmile_walkthrough//images/joker.jpg">
-<meta property="twitter:image" content="https://blog.play2win.top/2020/06/28/GlasgowSmile_walkthrough//images/joker.jpg">
+<meta property="og:title" content="用不可描述的软件做HTB的前置代理 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2020/10/05/用不可描述的软件做HTB的前置代理//images/Hack-The-Box-logo-1024x433.png">
+<meta property="twitter:image" content="https://blog.play2win.top/2020/10/05/用不可描述的软件做HTB的前置代理//images/Hack-The-Box-logo-1024x433.png">
 
 
 
@@ -73,7 +73,7 @@
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/header.png" alt="GlasgowSmile walkthrought" height="28">
+                <img src="/images/header.png" alt="用不可描述的软件做HTB的前置代理" height="28">
                 P1ay2win&#39;s blog
             
             </a>
@@ -130,7 +130,7 @@
     
     <div class="card-image">
         <span  class="image is-7by1">
-            <img class="thumbnail" src="/images/joker.jpg" alt="GlasgowSmile walkthrought">
+            <img class="thumbnail" src="/images/Hack-The-Box-logo-1024x433.png" alt="用不可描述的软件做HTB的前置代理">
         </span>
     </div>
     
@@ -138,17 +138,17 @@
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2020-06-28T09:49:27.000Z">2020-06-28</time>
+                <time class="level-item has-text-grey" datetime="2020-10-05T07:10:53.000Z">2020-10-05</time>
                 
                 <div class="level-item">
-                <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
+                <a class="has-link-grey -link" href="/categories/日常/">日常</a>
                 </div>
                 
                 
                 <span class="level-item has-text-grey">
                     
                     
-                    5 分钟 读完 (大约 770 个字)
+                    2 分钟 读完 (大约 374 个字)
                 </span>
                 
                 
@@ -160,66 +160,30 @@
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                GlasgowSmile walkthrought
+                用不可描述的软件做HTB的前置代理
             
         </h1>
         <div class="content">
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这是一个中等难度的靶机，Web方面fuzz力度不够大，偷瞄了别人的walkthrough才做出来，提权方面则要细心，发现作者留下的线索。</p>
-<blockquote>
-<p><a href="https://www.vulnhub.com/entry/glasgow-smile-11,491/" target="_blank" rel="noopener">https://www.vulnhub.com/entry/glasgow-smile-11,491/</a></p>
-</blockquote>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>​前段时间打HTB，一直受到速度慢的困扰，有时等待一些静态资源加载都要好久。由于一些众所周知的原因，而且HTB提供的代理是OpenVpn，更是被重点关注，于是摸索出来给HTB的OpenVpn加个前置代理的方法，可以加快点速度。</p>
 <a id="more"></a>
-<h2 id="利用过程"><a href="#利用过程" class="headerlink" title="利用过程"></a>利用过程</h2><p>nmap扫了下，只开放了两个端口，22和80。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -p- -T 4 192.168.189.134</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 094353.png" style="width:100%;"></p>
-<p>进去80的网页看到是一张小丑的壁纸，用dirb扫了下目录，发现了joomla CMS。版本比较新，前台没用爆出来公开漏洞。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.189.134/ /usr/share/wordlists/dirb/big.txt -x /usr/share/wordlists/dirb/extensions_common.txt</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 110530.png" style="width:100%;"></p>
-<p>进后台使用自带的字典爆破admin和joker的弱口令，没爆出来。一筹莫展，遂瞄了下别人的walkthrough，原来是用利用主页生成的字典，爆破joomla用户的弱口令，这个是真的没想到。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python pydictor.py -plug scratch http://192.168.189.134/joomla</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 111955.png" style="width:100%;"></p>
-<p>将生成的字典导入到burpsuite爆破，很快就爆破出密码为Gotham。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 112619.png" style="width:100%;"></p>
-<p>在网上搜索到了joomla编辑模板处能改php代码和上传文件，于是插入php一句话成功Getshell。</p>
-<blockquote>
-<p><a href="http://192.168.189.134/joomla/administrator/index.php?option=com_templates&amp;view=templates" target="_blank" rel="noopener">http://192.168.189.134/joomla/administrator/index.php?option=com_templates&amp;view=templates</a></p>
-</blockquote>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 122623.png" style="width:100%;"></p>
-<p>在<code>templates/beez3/</code>目录下找到了webshell。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 122906.png" style="width:100%;"></p>
-<p>反弹一个shell到本机，用<a href="https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite" target="_blank" rel="noopener">privilege-escalation-awesome-scripts-suite</a>没扫出来东西，查看了joomla的配置文件，发现了msyql的登录密码。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 162639.png" style="width:100%;"></p>
-<p>要想在mysql界面正常交互，要运行以下命令弹一个正常的shell。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 -c <span class="hljs-string">"import pty;pty.spawn('/bin/bash')"</span></span><br></pre></td></tr></table></figure>
-<p>显示所有数据库发现还有个<code>batjoke</code>库，里面的<code>taskforce</code>表记录着几个用户的密码，其中rob是靶机其中一个用户。</p>
-<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">show databases;</span><br><span class="line">use batjoke;</span><br><span class="line">select * from taskforce;</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 164111.png" style="width:100%;"></p>
-<p>拿密码去base64解码，结果为<code>???AllIHaveAreNegativeThoughts???</code>，用此密码通过ssh成功登录到rob用户。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh rob@192.168.189.134</span><br></pre></td></tr></table></figure>
-<p>在rob用户home目录获得了第一个flag和一串密文。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 164604.png" style="width:100%;"></p>
-<p>看着密文的样子，以我水ctf的经验，首先就猜到了是古典密码的凯撒加密。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 164947.png" style="width:100%;"></p>
-<p>接着base64解码最后一行的base64，结果为<code>I33hope99my0death000makes44more8cents00than0my0life0</code>。</p>
-<p>用解码的结果切换到了abner用户，获得了第二个flag，并发现<code>history</code>有点东西，解压了一个叫<code>.dear_penguins.zip</code>压缩包。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 165513.png" style="width:100%;"></p>
-<p>用find命令找到了压缩包的位置，解压需要密码，爆破了一番也没爆破出来，最后用abner的登录密码就正确了。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 170541.png" style="width:100%;"></p>
-<p>内容的最后一行同样是另一个用户penguin的登录密码，不过这回不需要解码。</p>
-<p>去到home目录下的SomeoneWhoHidesBehindAMask目录，看见了第三flag，并且发现了两个属于root的文件。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 172725.png" style="width:100%;"></p>
-<p>把<a href="https://github.com/phra/pspy" target="_blank" rel="noopener">pspy</a>传上靶机，发现root用户通过定时任务定时运行目录下的.trash_old。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-26 185452.png" style="width:100%;"></p>
-<p>在文件里插入反弹shell，等一会儿成功提权。</p>
-<p><img src="/2020/06/28/GlasgowSmile_walkthrough/批注 2020-06-28 174127.png" style="width:100%;"></p>
+<h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><ul>
+<li>不可描述软件酸酸乳和账号一个（我用的酸酸乳，用V2什么的应该也是可以的吧）</li>
+</ul>
+<p>右键酸酸乳的运行图标，点击端口设置。像下图一样，添加一个端口设置。开关打开、类型选端口转发，目标地址用的HTB节点的域名，按实际情况填，本地端口随意。</p>
+<p><img src="/2020/10/05/用不可描述的软件做HTB的前置代理/屏幕截图 2020-10-04 111807.png" alt="屏幕截图 2020-10-04 111807"></p>
+<h2 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h2><p>按照官网上的指引修改协议为tcp（酸酸乳默认只支持tcp）。</p>
+<p>修改udp协议为tcp、修改remote的端口为端口转发的本地监听端口、服务器地址改为端口转发监听的网卡ip地址、修改<code>&lt;tls-auth&gt;</code>标签为<code>&lt;tls-crypt&gt;</code>。</p>
+<p><img src="/2020/10/05/用不可描述的软件做HTB的前置代理/屏幕截图 2020-10-04 123751.png" alt="屏幕截图 2020-10-04 123751"></p>
+<p>修改好并保存，启动openvpn应该就能正常运行了，虽然还是很慢，但静态文件至少还能加载，还是充钱才能变得更强啊。</p>
+<p><img src="/2020/10/05/用不可描述的软件做HTB的前置代理/屏幕截图 2020-10-04 204001.png" alt="屏幕截图 2020-10-04 204001"></p>
 
         </div>
         
             <ul class="post-copyright">
-            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/06/28/GlasgowSmile_walkthrough/">GlasgowSmile walkthrought</a></li>
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/10/05/用不可描述的软件做HTB的前置代理/">用不可描述的软件做HTB的前置代理</a></li>
             <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
-            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/06/28/GlasgowSmile_walkthrough/">https://blog.play2win.top/2020/06/28/GlasgowSmile_walkthrough/</a></li>
-            <li><strong>发布时间：</strong>2020-06-28</li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/10/05/用不可描述的软件做HTB的前置代理/">https://blog.play2win.top/2020/10/05/用不可描述的软件做HTB的前置代理/</a></li>
+            <li><strong>发布时间：</strong>2020-10-05</li>
             <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
             </li>
             </ul>
@@ -237,17 +201,10 @@
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
-        <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/08/09/HackTheBox_Remote_walkthrough/">
-                <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">HackTheBox Remote walkthrough</span>
-            </a>
-        </div>
-        
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/2020/06/25/icmp_tunnel_learning_note/">
-                <span class="level-item">ICMP隧道学习笔记</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/2020/09/11/第二次梦里的后渗透/">
+                <span class="level-item">第二次梦里的后渗透</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -268,7 +225,7 @@
     var gitalk = new Gitalk({
         clientID: '372fb49f2243341bf93b',
         clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
-        id: 'f5af91baa84ebf363f616b07018eb25a',
+        id: '38cb0d6942bc14daa3cbf0cb116cca86',
         repo: 'p1ay2win.github.io',
         owner: 'p1ay2win',
         admin: "p1ay2win",
@@ -386,9 +343,13 @@
         <span class="has-mr-6">1</span>
         <span>前言</span>
         </a></li><li>
-        <a class="is-flex" href="#利用过程">
+        <a class="is-flex" href="#准备工作">
         <span class="has-mr-6">2</span>
-        <span>利用过程</span>
+        <span>准备工作</span>
+        </a></li><li>
+        <a class="is-flex" href="#修改配置文件">
+        <span class="has-mr-6">3</span>
+        <span>修改配置文件</span>
         </a></li></ul>
             </div>
         </div>
