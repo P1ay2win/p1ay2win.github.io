@@ -179,7 +179,7 @@
 <h3 id="横向移动"><a href="#横向移动" class="headerlink" title="横向移动"></a>横向移动</h3><p>在蚁剑的模拟终端看了下，没有杀软，可以直接powershell无文件上线。</p>
 <p>也因为是phpStudy，所以webshell也直接是高权限，提权都省了。看了下存在域，当前账号就是域管理员，域内主机有三台。</p>
 <figure class="highlight powershell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">net group <span class="hljs-string">"domain admins"</span> /domain</span><br><span class="line">net group <span class="hljs-string">"domain computers"</span> /domain</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/10/13/[域渗透]Vulnstack1_walkthrough/屏幕截图 2020-10-13 110623.png" alt></p>
+<p><img src="/2020/10/13/[域渗透]Vulnstack1_walkthrough/屏幕截图 2020-10-12 230729.png" alt></p>
 <p>有了域管理员账号，讲道理直接横向移动就行，但这里内网主机不出网，还要做点前置操作。对比了几种方法，觉得smb管道正向连接比较简便。</p>
 <ul>
 <li><p>在监听列表添加一个SMB的Beacon。</p>
