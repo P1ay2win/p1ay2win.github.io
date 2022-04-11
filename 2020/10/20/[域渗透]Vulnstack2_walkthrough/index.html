@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>[域渗透]Vulnstack2_walkthrough - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="[域渗透]Vulnstack2_walkthrough | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/">
+<meta property="twitter:image" content="https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="[域渗透]Vulnstack2_walkthrough" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="[域渗透]Vulnstack2_walkthrough" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2020-10-20T12:57:27.000Z">2020-10-20</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/靶机/">靶机</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    6 分钟 读完 (大约 967 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                [域渗透]Vulnstack2_walkthrough
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>For some reason,I can’t explain.靶机下完好几天了，现在才写walkthrough，主要是太菜了，到现在还没人捞。。。vulnstack2比vulnstack1复杂一点点，但也不难，不过也是设计得不错得一个靶机。感谢红日安全和de1ay师傅提供的靶机。</p>
+<a id="more"></a>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><p>这次也跟vulnstack1一样，划分了两个虚拟网络。子网地址分别为<code>192.168.111.0</code>和<code>10.10.10.0</code>。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-19 234655.png" alt></p>
+<ul>
+<li>WEB.de1ay.com的两张万卡分别连上VMnet1和VMnet2</li>
+<li>PC.de1ay.com也是连上VMnet1和VMnet2</li>
+<li>DC.de1ay.com则只需要连上VMnet2</li>
+<li>攻击者主机连上VMnet</li>
+</ul>
+<p>最后需要使用账号<code>de1ay\administrator</code>和密码<code>1qaz</code>登录到WEB.de1ay.com，进入到<code>C:\Oracle\Middleware\user_projects\domains\base_domain\bin</code>目录，双击<code>startWebLogic</code>批处理脚本，启动WebLogic。</p>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><h3 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h3><p>WEB.de1ay.com这台主机开放了很多端口，其中80、1433、3389和7001就比较有用，这里7001就是WebLogic的默认端口。另一台主机暂时可能就3389端口比较有用。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 105529.png" alt></p>
+<p>WEB.de1ay.com的80端口进去就是空白页面，扫目录页没有扫到扫东西。</p>
+<p>7001端口直接在浏览器上打开就看到明显是WebLogic的404页面，输入路径<code>/console/login/LoginForm.jsp</code>就能WebLogic的登录界面。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 113153.png" alt></p>
+<h3 id="打点"><a href="#打点" class="headerlink" title="打点"></a>打点</h3><p>既然由WebLogic，那就顺理成章地拿WeblogicScan扫了下，存在CVE-2019-2725。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 150713.png" alt></p>
+<p>刚好msf里有这个洞的利用脚本，直接一把梭getshell。注意这里target默认是unix，用命令<code>set target 1</code>就可以把target设置为Windows。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 151237.png" alt></p>
+<p>最后<code>run</code>就会返回个meterpeter的session，没什么难度。</p>
+<h3 id="BypassUAC"><a href="#BypassUAC" class="headerlink" title="BypassUAC"></a>BypassUAC</h3><p>个人横向移动更喜欢用cobaltstrike，所以用msf的<code>payload_inject</code>把session派生到cobaltstrike。</p>
+<p>在cs上看到session的用户是administrator，准备收集域信息时，遇到了拒绝访问，一开始还以为是360的锅，但在WEB的虚拟机上，看360不为所动。查下资料得知是UAC的问题，用cs4.0提权模块里的svc-exe即可绕过UAC。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 154700.png" alt></p>
+<p>好奇这个svc-exe是什么原理，又搜了下质料得到这样的解释：psexec打自己。</p>
+<h3 id="信息收集-1"><a href="#信息收集-1" class="headerlink" title="信息收集"></a>信息收集</h3><p>绕过UAC后，顺利收集到了域信息，当前用户就是域管理员，域控在里一台机子。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 162707.png" alt></p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 162930.png" alt></p>
+<p>mimikatz读了一波密码，顺便翻了翻主机上的文件，感觉没什么敏感信息。<code>ipconfig</code>看了下又两个网段，10.10.10.1/24的就是内网网段。arp扫描下内网，有一个域控，另一个就是域成员主机。</p>
+<h3 id="横向移动"><a href="#横向移动" class="headerlink" title="横向移动"></a>横向移动</h3><p>administrator是域管理员，使用administartor的凭证横向移动就行了，但这里遇到个坑，没绕过UAC之前横向移动都失败了，我还以为是设置了某些策略的问题。。。</p>
+<p>使用cs的psexec进行横向移动，Session则选择SYSTEM权限的session。在内网不出网情况下，上线DC只需要像上回那样用smb的Listener即可。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 165622.png" alt></p>
+<p>PC的上线操作也差不多，现在所有的主机都上了线了。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 170017.png" alt></p>
+<p>顺便说下DC.de1ay.com还存在MS17-010，但是用msf的命令执行的payload打一次，session就断一次，太难受了。</p>
+<p>还有最近那个Zerologon也是可以的，毕竟是最新的洞，但那socks代理死活连不上内网/捂脸。只好把网卡直接接到内网。</p>
+<p><img src="/2020/10/20/[域渗透]Vulnstack2_walkthrough/屏幕截图 2020-10-20 191228.png" alt></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/">[域渗透]Vulnstack2_walkthrough</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/">https://blog.play2win.top/2020/10/20/[域渗透]Vulnstack2_walkthrough/</a></li>
+            <li><strong>发布时间：</strong>2020-10-20</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/域/">域</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/11/09/2020铁三第四赛区个人赛writeup/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">[PWN]2020铁三第四赛区个人赛writeup</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2020/10/13/[域渗透]Vulnstack1_walkthrough/">
+                <span class="level-item">[域渗透]Vulnstack1_walkthrough</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: '811cbbe7a90bfb84f9c1fec81f7d7ed9',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#环境搭建">
+        <span class="has-mr-6">2</span>
+        <span>环境搭建</span>
+        </a></li><li>
+        <a class="is-flex" href="#漏洞利用">
+        <span class="has-mr-6">3</span>
+        <span>漏洞利用</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#信息收集">
+        <span class="has-mr-6">3.1</span>
+        <span>信息收集</span>
+        </a></li><li>
+        <a class="is-flex" href="#打点">
+        <span class="has-mr-6">3.2</span>
+        <span>打点</span>
+        </a></li><li>
+        <a class="is-flex" href="#BypassUAC">
+        <span class="has-mr-6">3.3</span>
+        <span>BypassUAC</span>
+        </a></li><li>
+        <a class="is-flex" href="#信息收集-1">
+        <span class="has-mr-6">3.4</span>
+        <span>信息收集</span>
+        </a></li><li>
+        <a class="is-flex" href="#横向移动">
+        <span class="has-mr-6">3.5</span>
+        <span>横向移动</span>
+        </a></li></ul></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

